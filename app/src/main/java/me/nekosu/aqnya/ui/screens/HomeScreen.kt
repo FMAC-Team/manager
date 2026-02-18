@@ -129,7 +129,6 @@ fun HomeScreen() {
     }
 
     if (showInstallSheet) {
-        // InstallGuideSheet(onDismiss = { showInstallSheet = false })
     }
 }
 
