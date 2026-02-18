@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nekosu</string>
+    <string name="app_name">nekosu</string>
     <string name="all_app">全部应用</string>
     <string name="can_launch_app">可用应用</string>
     <string name="system_app">系统应用</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Nekosu</string>
+    <string name="app_name">nekosu</string>
     <string name="all_app">All Apps</string>
     <string name="can_launch_app">Launchable Apps</string>
     <string name="system_app">System Apps</string>
