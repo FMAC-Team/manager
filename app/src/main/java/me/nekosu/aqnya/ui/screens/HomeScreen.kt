@@ -41,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -65,7 +64,6 @@ private const val B32_SECRET = "P2U6KVKZKSFKXGXO7XN6S6X62X6M6NE7"
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-    val clipboardManager = LocalClipboardManager.current
 
     var showInstallSheet by remember { mutableStateOf(false) }
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
