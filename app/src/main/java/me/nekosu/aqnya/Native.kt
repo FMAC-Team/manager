@@ -2,14 +2,15 @@ package me.nekosu.aqnya
 
 import android.content.Context
 
-class Native {
+class Ncore {
     companion object {
         init {
-            System.loadLibrary("nksu")
+            System.loadLibrary("ncore")
         }
     }
 
-    external fun authenticate(key: String?, token: String?): Int
+external fun helloLog();
 
-    external fun Sigcheck(context: Context): Boolean
+external fun authenticate(key: String?, token: String?): Int
+
 }
