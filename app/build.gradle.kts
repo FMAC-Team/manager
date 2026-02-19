@@ -29,7 +29,7 @@ android {
     
     sourceSets {
         getByName("main") {
-            jniLibs.setSrcDirs(listOf("src/main/jniLibs", "../ncore/zig-out/lib"))
+            jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
         }
     }
 
