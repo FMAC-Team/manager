@@ -48,7 +48,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.KeyUtils
-import me.nekosu.aqnya.Ncore
+import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.fetchSELinuxStatus
 import me.nekosu.aqnya.util.getAppVersion
 
@@ -74,7 +74,7 @@ fun HomeScreen() {
             val keypath = KeyUtils.getKeyFilePath(context)
             if (KeyUtils.checkKeyExists(context)) {
                 val token = KeyUtils.getTotpToken(B32_SECRET)
-                val result = Ncore().authenticate(keypath, token)
+                val result = ncore().authenticate(keypath, token)
                 installStatus =
                     if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
             } else {
@@ -129,7 +129,7 @@ fun HomeScreen() {
     }
 
     if (showInstallSheet) {
-    Ncore().helloLog(); 
+    ncore().helloLog(); 
     }
 }
 

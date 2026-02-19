@@ -2,7 +2,7 @@ package me.nekosu.aqnya
 
 import android.content.Context
 
-class Ncore {
+class ncore {
     companion object {
         init {
             System.loadLibrary("ncore")

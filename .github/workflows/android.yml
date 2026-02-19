@@ -27,10 +27,10 @@ jobs:
         git clone https://github.com/FMAC-Team/ncore.git
         sudo snap install zig --classic --beta
         cd ncore
-        zig build -Dtarget=aarch64-linux-android
-        mkdir -p app/src/main/jniLibs/arm64-v8a
-        cp zig-out/lib/libncore.so app/src/main/jniLibs/arm64-v8a/
+        zig build -Dtarget=aarch64-linux-android -Doptimize=ReleaseSafe
         cd -
+        mkdir -p app/src/main/jniLibs/arm64-v8a/
+        cp zig-out/lib/libncore.so app/src/main/jniLibs/arm64-v8a/
 
     - name: Build with Gradle
       run: ./gradlew assembleRelease
