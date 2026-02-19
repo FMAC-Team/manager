@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,24 +59,18 @@ fun BottomNavigationBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     val topCornerRadius = 24.dp
-    val navBarHeight = 110.dp
 
     NavigationBar(
-        modifier =
-        Modifier
-            .clip(RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius))
-            .then(Modifier.height(navBarHeight))
+        modifier = Modifier
+            .clip(RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius)),
+        windowInsets = WindowInsets.navigationBars
     ) {
         BottomNavItem.Companion.items.forEach { item ->
             val selected = currentRoute == item.route
             NavigationBarItem(
                 icon = {
                     Icon(
-                        imageVector = if (selected) {
-                            item.selectedIcon
-                        } else {
-                            item.unselectedIcon
-                        },
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
                         contentDescription = item.title
                     )
                 },
@@ -108,54 +103,56 @@ fun MainScreen() {
     var showDialog by remember { mutableStateOf(isKeyMissingInitial) }
 
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) },
-        contentWindowInsets = WindowInsets(0, 0, 0, 0)
+        bottomBar = { BottomNavigationBar(navController) }
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = BottomNavItem.Home.route,
             modifier = Modifier.padding(innerPadding)
         ) {
+            val commonTween = tween<Float>(300)
+            
             composable(
                 route = BottomNavItem.Home.route,
-                enterTransition = { fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { fadeOut(animationSpec = tween(300)) }
+                enterTransition = { fadeIn(commonTween) },
+                exitTransition = { fadeOut(commonTween) },
+                popEnterTransition = { fadeIn(commonTween) },
+                popExitTransition = { fadeOut(commonTween) }
             ) { HomeScreen() }
+
             composable(
                 route = BottomNavItem.History.route,
-                enterTransition = { fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { fadeOut(animationSpec = tween(300)) }
+                enterTransition = { fadeIn(commonTween) },
+                exitTransition = { fadeOut(commonTween) },
+                popEnterTransition = { fadeIn(commonTween) },
+                popExitTransition = { fadeOut(commonTween) }
             ) { HistoryScreen() }
+
             composable(
                 route = BottomNavItem.Settings.route,
-                enterTransition = { fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { fadeOut(animationSpec = tween(300)) }
+                enterTransition = { fadeIn(commonTween) },
+                exitTransition = { fadeOut(commonTween) },
+                popEnterTransition = { fadeIn(commonTween) },
+                popExitTransition = { fadeOut(commonTween) }
             ) { SettingsScreen(navController) }
+
             composable(
                 route = "about",
-                enterTransition = { fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { fadeOut(animationSpec = tween(300)) }
+                enterTransition = { fadeIn(commonTween) },
+                exitTransition = { fadeOut(commonTween) }
             ) { AboutScreen(navController) }
+
             composable(
                 route = "open_source",
-                enterTransition = { fadeIn(animationSpec = tween(300)) },
-                exitTransition = { fadeOut(animationSpec = tween(300)) },
-                popEnterTransition = { fadeIn(animationSpec = tween(300)) },
-                popExitTransition = { fadeOut(animationSpec = tween(300)) }
+                enterTransition = { fadeIn(commonTween) },
+                exitTransition = { fadeOut(commonTween) }
             ) { OpenSourceScreen(navController) }
         }
 
         val owner = "aqnya"
         val repo = "nekosu"
         CheckUpdate(owner = owner, repo = repo)
+        
         if (showDialog) {
             KeyInputDialog(
                 show = showDialog,
@@ -169,32 +166,25 @@ fun MainScreen() {
 fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var inputText by remember { mutableStateOf("") }
-    var errorType by remember { mutableIntStateOf(0) } // 0-none, 1-empty, 2-invalid
+    var errorType by remember { mutableIntStateOf(0) }
     val scrollState = rememberScrollState()
 
     AnimatedVisibility(
         visible = show,
-        enter =
-        fadeIn(animationSpec = tween(250)) +
-            scaleIn(initialScale = 0.8f, animationSpec = tween(250)),
-        exit =
-        fadeOut(animationSpec = tween(200)) +
-            scaleOut(targetScale = 0.8f, animationSpec = tween(200))
+        enter = fadeIn(tween(250)) + scaleIn(initialScale = 0.8f, animationSpec = tween(250)),
+        exit = fadeOut(tween(200)) + scaleOut(targetScale = 0.8f, animationSpec = tween(200))
     ) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
             title = {
                 Text(
                     text = stringResource(R.string.dialog_key_set),
-                    style = TextStyle(
-                        fontSize = 16.sp
-                    )
+                    style = TextStyle(fontSize = 16.sp)
                 )
             },
             text = {
                 Column(
-                    modifier =
-                    Modifier
+                    modifier = Modifier
                         .verticalScroll(scrollState)
                         .fillMaxWidth()
                 ) {
@@ -207,26 +197,19 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                             inputText = it
                             errorType = 0
                         },
-                        label = { Text("ECC Key (PEM/Base64)", style = TextStyle(fontSize = 14.sp)) },
+                        label = { Text("ECC Key (PEM/Base64)", fontSize = 14.sp) },
                         placeholder = {
-                            Text("-----BEGIN EC PRIVATE KEY-----...", style = TextStyle(fontSize = 14.sp))
+                            Text("-----BEGIN EC PRIVATE KEY-----...", fontSize = 14.sp)
                         },
                         singleLine = false,
-                        modifier =
-                        Modifier
+                        modifier = Modifier
                             .fillMaxWidth()
                             .heightIn(min = 120.dp, max = 240.dp),
                         isError = errorType != 0,
                         supportingText = {
                             when (errorType) {
-                                1 -> Text(
-                                    stringResource(R.string.dialog_key_input_no_empty),
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                2 -> Text(
-                                    stringResource(R.string.dialog_key_input_invalid),
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                1 -> Text(stringResource(R.string.dialog_key_input_no_empty), color = MaterialTheme.colorScheme.error)
+                                2 -> Text(stringResource(R.string.dialog_key_input_invalid), color = MaterialTheme.colorScheme.error)
                             }
                         }
                     )
@@ -236,12 +219,11 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                 Button(
                     onClick = {
                         val trimmedKey = inputText.trim()
-                        errorType =
-                            when {
-                                trimmedKey.isBlank() -> 1
-                                !KeyUtils.isValidECCKey(trimmedKey) -> 2
-                                else -> 0
-                            }
+                        errorType = when {
+                            trimmedKey.isBlank() -> 1
+                            !KeyUtils.isValidECCKey(trimmedKey) -> 2
+                            else -> 0
+                        }
                         if (errorType == 0) {
                             KeyUtils.saveKey(context, trimmedKey)
                             onDismiss()
@@ -258,7 +240,6 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
