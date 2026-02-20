@@ -11,6 +11,8 @@ class ncore {
 
 external fun helloLog();
 
+external fun generateTotp( key: String):Int
+
 external fun authenticate(key: String?, token: String?): Int
 
 }
