@@ -25,10 +25,11 @@ jobs:
     - name: build ncore
       run: |
         git clone https://github.com/FMAC-Team/ncore.git
-        sudo snap install zig --classic --beta
+        curl -OL https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
+        tar -xvf zig-x86_64-linux-0.15.2.tar.xz
         cd ncore
-        zig build -Dtarget=aarch64-linux-android -Doptimize=ReleaseSafe
-        cd -
+        ../zig-x86_64-linux-0.15.2/zig build -Dtarget=aarch64-linux-android >/dev/null
+        cd ..
         mkdir -p app/src/main/jniLibs/arm64-v8a/
         cp ncore/zig-out/lib/libncore.so app/src/main/jniLibs/arm64-v8a/
 
