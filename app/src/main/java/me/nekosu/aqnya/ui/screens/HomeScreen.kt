@@ -74,7 +74,7 @@ fun HomeScreen() {
             val keypath = KeyUtils.getKeyFilePath(context)
             if (KeyUtils.checkKeyExists(context)) {
                 val token = KeyUtils.getTotpToken(B32_SECRET)
-                val result = ncore().authenticate(keypath, token)
+                val result = ncore().ctl(1,B32_SECRET )
                 installStatus =
                     if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
             } else {

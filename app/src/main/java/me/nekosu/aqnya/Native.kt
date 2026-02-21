@@ -15,4 +15,6 @@ external fun generateTotp( key: String):Int
 
 external fun authenticate(key: String?, token: String?): Int
 
+external fun ctl(value: Int,  key: String): Int
+
 }
