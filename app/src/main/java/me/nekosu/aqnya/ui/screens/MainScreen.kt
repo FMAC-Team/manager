@@ -99,8 +99,6 @@ fun BottomNavigationBar(navController: NavController) {
 fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val isKeyMissingInitial = !KeyUtils.checkKeyExists(context)
-    var showDialog by remember { mutableStateOf(isKeyMissingInitial) }
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
@@ -153,12 +151,6 @@ fun MainScreen() {
         val repo = "nekosu"
         CheckUpdate(owner = owner, repo = repo)
         
-        if (showDialog) {
-            KeyInputDialog(
-                show = showDialog,
-                onDismiss = { showDialog = false }
-            )
-        }
     }
 }
 
