@@ -58,8 +58,6 @@ enum class InstallStatus {
     NOT_INSTALLED
 }
 
-private const val B32_SECRET = "P2U6KVKZKSFKXGXO7XN6S6X62X6M6NE7"
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen() {
@@ -71,7 +69,7 @@ fun HomeScreen() {
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-                val result = ncore().ctl(1,B32_SECRET )
+                val result = ncore().ctl(1)
                 installStatus =
                     if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
         }
