@@ -1,4 +1,4 @@
-package me.nekosu.aqnya.ui.util
+package me.nekosu.aqnya.util
 
 import android.util.Log
 import com.squareup.moshi.Json

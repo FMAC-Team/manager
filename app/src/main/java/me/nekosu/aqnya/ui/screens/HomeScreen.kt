@@ -112,7 +112,6 @@ LaunchedEffect(Unit) {
 
             DeviceInfoCard(
                 modifier = Modifier.fillMaxWidth(),
-                selinuxStatus = selinuxStatus
             )
         }
     }
@@ -215,7 +214,7 @@ data class StatusConfig(
 )
 
 @Composable
-fun DeviceInfoCard(modifier: Modifier = Modifier, selinuxStatus: String) {
+fun DeviceInfoCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val appVersion =
         remember {

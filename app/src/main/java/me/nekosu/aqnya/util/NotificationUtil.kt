@@ -1,4 +1,4 @@
-package me.nekosu.aqnya.ui.util
+package me.nekosu.aqnya.util
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
