@@ -17,7 +17,6 @@ object LogUtils {
             Toast.makeText(context, "日志为空", Toast.LENGTH_SHORT).show()
         }
     }
-}
 
 
     private fun shareLogFile(context: Context, file: File) {
