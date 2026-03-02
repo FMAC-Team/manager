@@ -9,31 +9,18 @@ import java.io.File
 import java.io.FileOutputStream
 
 object LogUtils {
-    /**
-     * 导出并分享日志文件
-     */
     fun exportLogs(context: Context) {
-        try {
-            // 1. 获取 logcat 日志
-            val process = Runtime.getRuntime().exec("logcat -d")
-            val logText = process.inputStream.bufferedReader().use { it.readText() }
-
-            // 2. 创建临时文件 (保存到应用缓存目录)
-            val logFile = File(context.cacheDir, "nekosu_log_${System.currentTimeMillis()}.txt")
-            FileOutputStream(logFile).use { fos ->
-                fos.write(logText.toByteArray())
-            }
-
-            // 3. 弹出分享菜单
+        val logFile = File(context.filesDir, "debug.log")
+        if (logFile.exists() && logFile.length() > 0) {
             shareLogFile(context, logFile)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            Toast.makeText(context, "导出日志失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(context, "日志为空", Toast.LENGTH_SHORT).show()
         }
     }
+}
+
 
     private fun shareLogFile(context: Context, file: File) {
-        // 注意：你需要在 AndroidManifest 中配置 FileProvider
         val authority = "${context.packageName}.fileprovider"
         val contentUri: Uri = FileProvider.getUriForFile(context, authority, file)
 
