@@ -29,7 +29,7 @@
     *;
 }
 
--keep class me.nekosu.aqnya.ui.util.GitHubRelease { 
+-keep class me.nekosu.aqnya.util.GitHubRelease { 
     *; 
 }
 
