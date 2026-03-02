@@ -49,7 +49,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.ncore
-import me.nekosu.aqnya.util.fetchSELinuxStatus
 import me.nekosu.aqnya.util.getAppVersion
 
 enum class InstallStatus {
@@ -65,16 +64,14 @@ fun HomeScreen() {
 
     var showInstallSheet by remember { mutableStateOf(false) }
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
-    var selinuxStatus by remember { mutableStateOf("检查中...") }
 
-    LaunchedEffect(Unit) {
-        withContext(Dispatchers.IO) {
-                val result = ncore().ctl(1)
-                installStatus =
-                    if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
-        }
-        selinuxStatus = fetchSELinuxStatus()
+LaunchedEffect(Unit) {
+    installStatus = withContext(Dispatchers.IO) {
+        val result = ncore().ctl(1)
+        if (result == 0){ InstallStatus.INSTALLED} else {InstallStatus.NOT_INSTALLED}
     }
+}
+
 
     Scaffold(
         topBar = {
@@ -261,12 +258,6 @@ fun DeviceInfoCard(modifier: Modifier = Modifier, selinuxStatus: String) {
                 icon = Icons.Filled.Settings,
                 title = "管理器版本",
                 value = appVersion
-            )
-
-            DeviceInfoItem(
-                icon = Icons.Filled.Security,
-                title = "SELinux 状态",
-                value = selinuxStatus
             )
         }
     }

@@ -50,8 +50,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
-import me.nekosu.aqnya.ui.util.BottomNavItem
-import me.nekosu.aqnya.ui.util.CheckUpdate
+import me.nekosu.aqnya.util.BottomNavItem
+import me.nekosu.aqnya.util.CheckUpdate
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
