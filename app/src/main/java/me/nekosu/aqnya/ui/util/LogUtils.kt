@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
+import android.content.ClipData
 
 object LogUtils {
     fun exportLogs(context: Context) {
@@ -28,6 +29,7 @@ object LogUtils {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, contentUri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, "debug.log", contentUri)
             }
 
         context.startActivity(Intent.createChooser(intent, "分享/导出日志"))
