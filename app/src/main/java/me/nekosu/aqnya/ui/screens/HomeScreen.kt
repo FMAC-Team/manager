@@ -72,7 +72,6 @@ LaunchedEffect(Unit) {
     }
 }
 
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,10 +108,13 @@ LaunchedEffect(Unit) {
                     }
                 }
             )
+            
+        //    superinfo(0,0)
 
             DeviceInfoCard(
                 modifier = Modifier.fillMaxWidth(),
             )
+
         }
     }
 
@@ -120,6 +122,65 @@ LaunchedEffect(Unit) {
     ncore().helloLog(); 
     }
 }
+
+@Composable
+fun superinfo(su:Int,mod:Int) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top=10.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp) 
+    ) {
+        Card(
+            modifier = Modifier.weight(1f),
+colors =
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+            shape = RoundedCornerShape(24.dp),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "超级用户",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = su.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
+            )
+            }
+        }
+
+        Card(
+            modifier = Modifier.weight(1f),
+            colors =
+        CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+            shape = RoundedCornerShape(24.dp),
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = "模块",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = mod.toString(),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
+            )
+            }
+        }
+    }
+}
+
 
 @Composable
 fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
