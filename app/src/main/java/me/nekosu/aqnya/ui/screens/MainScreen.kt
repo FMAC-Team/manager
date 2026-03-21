@@ -52,6 +52,7 @@ import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
+import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -99,6 +100,19 @@ fun BottomNavigationBar(navController: NavController) {
 fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
+
+var showKeyDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        if (!KeyUtils.checkKeyExists(context)) {
+            showKeyDialog = true
+        }
+    }
+
+    KeyInputDialog(
+        show = showKeyDialog,
+        onDismiss = { showKeyDialog = false }
+    )
 
     Scaffold(
         bottomBar = { BottomNavigationBar(navController) }
