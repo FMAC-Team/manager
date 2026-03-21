@@ -159,23 +159,69 @@ object KeyUtils {
         return bytes.toByteArray()
     }
 
-    fun isValidECCKey(keyString: String): Boolean {
-        if (keyString.isBlank()) return false
-        val cleanKey = keyString
-            .replace("-----BEGIN (.*)-----".toRegex(), "")
-            .replace("-----END (.*)-----".toRegex(), "")
-            .replace("\\s".toRegex(), "")
+fun isValidECCKey(keyString: String): Boolean {
+    if (keyString.isBlank()) return false
 
-        return try {
-            val keyBytes = Base64.decode(cleanKey, Base64.DEFAULT)
-            val factory = KeyFactory.getInstance("EC")
+    val cleanKey = keyString
+        .lines()
+        .map { it.trim() }
+        .filter { it.isNotEmpty() && !it.startsWith("-----") }
+        .joinToString("")
+
+    if (cleanKey.isEmpty()) return false
+
+    return try {
+        val keyBytes = Base64.decode(cleanKey, Base64.DEFAULT)
+        val factory = KeyFactory.getInstance("EC", "AndroidOpenSSL")
+
+        try {
             factory.generatePrivate(PKCS8EncodedKeySpec(keyBytes))
-            true
-        } catch (e: Exception) {
-            Log.e("KeyUtils", "No valid private key: ${e.message}")
-            false
-        }
+            return true
+        } catch (_: Exception) {}
+
+        try {
+            factory.generatePrivate(PKCS8EncodedKeySpec(sec1ToPkcs8(keyBytes)))
+            return true
+        } catch (_: Exception) {}
+
+        Log.e("KeyUtils", "No valid private key!")
+        false
+    } catch (e: Exception) {
+        Log.e("KeyUtils", "isValidECCKey error: $e")
+        false
     }
+}
+
+private fun sec1ToPkcs8(sec1Der: ByteArray): ByteArray {
+    // AlgorithmIdentifier for EC / prime256v1
+    // SEQUENCE { OID 1.2.840.10045.2.1, OID 1.2.840.10045.3.1.7 }
+    val algorithmIdentifier = byteArrayOf(
+        0x30, 0x13,
+        0x06, 0x07, 0x2a, 0x86.toByte(), 0x48, 0xce.toByte(), 0x3d, 0x02, 0x01,
+        0x06, 0x08, 0x2a, 0x86.toByte(), 0x48, 0xce.toByte(), 0x3d, 0x03, 0x01, 0x07
+    )
+
+    // OCTET STRING wrapping sec1
+    val octetString = derTlv(0x04, sec1Der)
+    val version = byteArrayOf(0x02, 0x01, 0x00)
+    val inner = version + algorithmIdentifier + octetString
+
+    return derTlv(0x30, inner)
+}
+
+private fun derTlv(tag: Int, value: ByteArray): ByteArray {
+    val len = value.size
+    val lenBytes = when {
+        len < 0x80 -> byteArrayOf(len.toByte())
+        len < 0x100 -> byteArrayOf(0x81.toByte(), len.toByte())
+        else -> byteArrayOf(
+            0x82.toByte(),
+            (len shr 8).toByte(),
+            (len and 0xff).toByte()
+        )
+    }
+    return byteArrayOf(tag.toByte()) + lenBytes + value
+}
     
        fun loadKeyBytes(context: Context): ByteArray? {
         return try {
