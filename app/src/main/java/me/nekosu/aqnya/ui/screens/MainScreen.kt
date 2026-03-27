@@ -289,7 +289,7 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                             else -> 0
                         }
                         if (errorType == 0) {
-                            KeyUtils.saveKey(context, trimmedKey.toByteArray(Charsets.UTF_8))
+                            KeyUtils.saveKey(context, trimmedKey)
                             onDismiss()
                         }
                     }
