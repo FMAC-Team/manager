@@ -54,6 +54,11 @@ class RootDbHelper(context: Context) : SQLiteOpenHelper(context, "root_manager.d
         }
         return set
     }
+    
+    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        db.execSQL("DROP TABLE IF EXISTS root_apps")
+        onCreate(db)
+    }
 
     fun setAllowed(packageName: String, allowed: Boolean) {
         val values = ContentValues().apply {
