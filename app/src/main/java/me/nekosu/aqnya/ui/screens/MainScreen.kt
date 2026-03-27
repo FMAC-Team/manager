@@ -182,15 +182,19 @@ fun MainScreen() {
     }
 
     Scaffold(
-        bottomBar = {}
+        bottomBar = {
+            BottomNavigationBar(navController)
+        }
     ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) 
+        ) {
             NavHost(
                 navController = navController,
                 startDestination = BottomNavItem.Home.route,
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(bottom = 96.dp)
+                modifier = Modifier.fillMaxSize()
             ) {
                 val commonTween = tween<Float>(300)
 
@@ -236,18 +240,11 @@ fun MainScreen() {
                 onDismiss = { showKeyDialog = false }
             )
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            ) {
-                BottomNavigationBar(navController)
-            }
-
             CheckUpdate(owner = "aqnya", repo = "nekosu")
         }
     }
 }
+
 
 @Composable
 fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {

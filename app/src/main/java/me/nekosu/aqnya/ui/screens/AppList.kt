@@ -1,8 +1,11 @@
 package me.nekosu.aqnya.ui.screens
 
+import android.content.ContentValues
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteOpenHelper
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -28,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -35,6 +39,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
+
+class RootDbHelper(context: Context) : SQLiteOpenHelper(context, "root_manager.db", null, 1) {
+    override fun onCreate(db: SQLiteDatabase) {
+        db.execSQL("CREATE TABLE root_apps (packageName TEXT PRIMARY KEY, allowed INTEGER)")
+    }
+
+    fun getAllowedPackages(): Set<String> {
+        val set = mutableSetOf<String>()
+        readableDatabase.rawQuery("SELECT packageName FROM root_apps WHERE allowed = 1", null).use { cursor ->
+            while (cursor.moveToNext()) {
+                set.add(cursor.getString(0))
+            }
+        }
+        return set
+    }
+
+    fun setAllowed(packageName: String, allowed: Boolean) {
+        val values = ContentValues().apply {
+            put("packageName", packageName)
+            put("allowed", if (allowed) 1 else 0)
+        }
+        writableDatabase.insertWithOnConflict("root_apps", null, values, SQLiteDatabase.CONFLICT_REPLACE)
+    }
+}
 
 data class AppInfo(
     val name: String,
@@ -54,12 +82,23 @@ enum class FilterMode(@param:StringRes val labelRes: Int) {
 class AppViewModel(private val context: Context) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
+    
+    private val dbHelper = RootDbHelper(context)
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
 
     var isLoaded by mutableStateOf(false)
         private set
+
+    var allowedApps by mutableStateOf<Set<String>>(emptySet())
+        private set
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            allowedApps = dbHelper.getAllowedPackages()
+        }
+    }
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -95,6 +134,25 @@ class AppViewModel(private val context: Context) : ViewModel() {
             allApps = installed
             isLoaded = true
             prefs.edit().putString("apps_cache", gson.toJson(installed)).apply()
+        }
+    }
+
+    fun toggleRootPermission(app: AppInfo, allow: Boolean) {
+        allowedApps = if (allow) {
+            allowedApps + app.packageName
+        } else {
+            allowedApps - app.packageName
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            dbHelper.setAllowed(app.packageName, allow)
+            if (allow) {
+                try {
+                //TODO
+                } catch (e: UnsatisfiedLinkError) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 }
@@ -239,6 +297,8 @@ fun HistoryScreen() {
                     contentPadding = PaddingValues(vertical = 8.dp)
                 ) {
                     items(apps, key = { it.packageName }) { app ->
+                        val isAllowed = viewModel.allowedApps.contains(app.packageName)
+
                         ListItem(
                             headlineContent = { Text(app.name) },
                             supportingContent = {
@@ -248,7 +308,17 @@ fun HistoryScreen() {
                                 }
                             },
                             leadingContent = { AppIcon(app.packageName) },
-                            modifier = Modifier.clickable { }
+                            trailingContent = {
+                                Switch(
+                                    checked = isAllowed,
+                                    onCheckedChange = { checked ->
+                                        viewModel.toggleRootPermission(app, checked)
+                                    }
+                                )
+                            },
+                            modifier = Modifier.clickable { 
+                                // viewModel.toggleRootPermission(app, !isAllowed)
+                            }
                         )
                         HorizontalDivider()
                     }
