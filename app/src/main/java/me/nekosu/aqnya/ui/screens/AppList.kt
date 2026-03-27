@@ -299,7 +299,10 @@ fun HistoryScreen() {
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    contentPadding = PaddingValues(
+                        top = 8.dp,
+                        bottom = 96.dp + androidx.compose.foundation.layout.WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                    )
                 ) {
                     items(apps, key = { it.packageName }) { app ->
                         val isAllowed = viewModel.allowedApps.contains(app.packageName)

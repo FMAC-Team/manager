@@ -181,15 +181,11 @@ fun MainScreen() {
         }
     }
 
-    Scaffold(
-        bottomBar = {
-            BottomNavigationBar(navController)
-        }
-    ) { innerPadding ->
+    Scaffold { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) 
+                .padding(innerPadding)
         ) {
             NavHost(
                 navController = navController,
@@ -241,6 +237,12 @@ fun MainScreen() {
             )
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
+
+            Box(
+                modifier = Modifier.align(Alignment.BottomCenter)
+            ) {
+                BottomNavigationBar(navController)
+            }
         }
     }
 }
