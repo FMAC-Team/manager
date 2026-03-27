@@ -76,3 +76,18 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }
+
+ktlint {
+    android.set(true)
+    ignoreFailures.set(false)
+    verbose.set(true)
+    outputToConsole.set(true)
+    reporters {
+        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
+    }
+
+    filter {
+        exclude("**/generated/**")
+        include("src/**/*.kt")
+    }
+}
