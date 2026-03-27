@@ -1,5 +1,6 @@
 package me.nekosu.aqnya.utils
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -7,7 +8,6 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
-import android.content.ClipData
 
 object LogUtils {
     fun exportLogs(context: Context) {
@@ -19,8 +19,10 @@ object LogUtils {
         }
     }
 
-
-    private fun shareLogFile(context: Context, file: File) {
+    private fun shareLogFile(
+        context: Context,
+        file: File,
+    ) {
         val authority = "${context.packageName}.fileprovider"
         val contentUri: Uri = FileProvider.getUriForFile(context, authority, file)
 

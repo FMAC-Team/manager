@@ -13,30 +13,30 @@ sealed class BottomNavItem(
     val route: String,
     val title: String,
     val selectedIcon: ImageVector,
-    val unselectedIcon: ImageVector
+    val unselectedIcon: ImageVector,
 ) {
     object Home : BottomNavItem(
         route = "home",
         title = "首页",
         selectedIcon = Icons.Filled.Home,
-        unselectedIcon = Icons.Outlined.Home
+        unselectedIcon = Icons.Outlined.Home,
     )
 
     object History : BottomNavItem(
         route = "app",
         title = "应用",
         selectedIcon = Icons.AutoMirrored.Filled.List,
-        unselectedIcon = Icons.AutoMirrored.Outlined.List
+        unselectedIcon = Icons.AutoMirrored.Outlined.List,
     )
 
     object Settings : BottomNavItem(
         route = "settings",
         title = "设置",
         selectedIcon = Icons.Filled.Settings,
-        unselectedIcon = Icons.Outlined.Settings
+        unselectedIcon = Icons.Outlined.Settings,
     )
 
     companion object {
         val items by lazy { listOf(Home, History, Settings) }
-}
+    }
 }

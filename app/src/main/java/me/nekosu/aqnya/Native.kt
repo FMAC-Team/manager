@@ -9,8 +9,7 @@ class ncore {
         }
     }
 
-external fun helloLog();
+    external fun helloLog()
 
-external fun ctl(value: Int): Int
-
+    external fun ctl(value: Int): Int
 }

@@ -3,6 +3,7 @@ package me.nekosu.aqnya.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -61,8 +63,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.foundation.layout.width
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.BottomNavItem
@@ -74,12 +74,13 @@ fun BottomNavigationBar(navController: NavController) {
     val currentRoute = navBackStackEntry?.destination?.route
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = 24.dp)
-            .windowInsetsPadding(WindowInsets.navigationBars),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp)
+                .windowInsetsPadding(WindowInsets.navigationBars),
+        contentAlignment = Alignment.Center,
     ) {
         Surface(
             shape = RoundedCornerShape(50),
@@ -88,81 +89,87 @@ fun BottomNavigationBar(navController: NavController) {
             shadowElevation = 16.dp,
         ) {
             Row(
-                modifier = Modifier
-                    .padding(horizontal = 8.dp, vertical = 8.dp)
-                    .height(48.dp),
+                modifier =
+                    Modifier
+                        .padding(horizontal = 8.dp, vertical = 8.dp)
+                        .height(48.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-       BottomNavItem.items.forEach { item ->
-    val selected = currentRoute == item.route
-
-    val containerColor by animateColorAsState(
-        targetValue = if (selected)
-            MaterialTheme.colorScheme.primaryContainer
-        else
-            Color.Transparent,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "navItemBg"
-    )
-
-    val itemWidth by animateDpAsState(
-        targetValue = if (selected) 88.dp else 48.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "navItemWidth"
-    )
-
-    Surface(
-        onClick = {
-            navController.navigate(item.route) {
-                launchSingleTop = true
-                restoreState = true
-                popUpTo(navController.graph.findStartDestination().id) {
-                    saveState = true
-                }
-            }
-        },
-        shape = RoundedCornerShape(50),
-        color = containerColor,
-        modifier = Modifier
-            .height(48.dp)
-            .width(itemWidth)
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.padding(horizontal = 12.dp)
             ) {
-                Icon(
-                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                    contentDescription = item.title,
-                    tint = if (selected)
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    else
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(22.dp)
-                )
-                AnimatedVisibility(
-                    visible = selected,
-                    enter = fadeIn(tween(200)),
-                    exit = fadeOut(tween(150))
-                ) {
-                    Text(
-                        text = item.title,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        maxLines = 1,
-                        softWrap = false
+                BottomNavItem.items.forEach { item ->
+                    val selected = currentRoute == item.route
+
+                    val containerColor by animateColorAsState(
+                        targetValue =
+                            if (selected) {
+                                MaterialTheme.colorScheme.primaryContainer
+                            } else {
+                                Color.Transparent
+                            },
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "navItemBg",
                     )
+
+                    val itemWidth by animateDpAsState(
+                        targetValue = if (selected) 88.dp else 48.dp,
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "navItemWidth",
+                    )
+
+                    Surface(
+                        onClick = {
+                            navController.navigate(item.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(50),
+                        color = containerColor,
+                        modifier =
+                            Modifier
+                                .height(48.dp)
+                                .width(itemWidth),
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize(),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.padding(horizontal = 12.dp),
+                            ) {
+                                Icon(
+                                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                    contentDescription = item.title,
+                                    tint =
+                                        if (selected) {
+                                            MaterialTheme.colorScheme.onPrimaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        },
+                                    modifier = Modifier.size(22.dp),
+                                )
+                                AnimatedVisibility(
+                                    visible = selected,
+                                    enter = fadeIn(tween(200)),
+                                    exit = fadeOut(tween(150)),
+                                ) {
+                                    Text(
+                                        text = item.title,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
-}
             }
         }
     }
@@ -183,14 +190,15 @@ fun MainScreen() {
 
     Scaffold { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             NavHost(
                 navController = navController,
                 startDestination = BottomNavItem.Home.route,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 val commonTween = tween<Float>(300)
 
@@ -199,7 +207,7 @@ fun MainScreen() {
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
-                    popExitTransition = { fadeOut(commonTween) }
+                    popExitTransition = { fadeOut(commonTween) },
                 ) { HomeScreen() }
 
                 composable(
@@ -207,7 +215,7 @@ fun MainScreen() {
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
-                    popExitTransition = { fadeOut(commonTween) }
+                    popExitTransition = { fadeOut(commonTween) },
                 ) { HistoryScreen() }
 
                 composable(
@@ -215,31 +223,31 @@ fun MainScreen() {
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
-                    popExitTransition = { fadeOut(commonTween) }
+                    popExitTransition = { fadeOut(commonTween) },
                 ) { SettingsScreen(navController) }
 
                 composable(
                     route = "about",
                     enterTransition = { fadeIn(commonTween) },
-                    exitTransition = { fadeOut(commonTween) }
+                    exitTransition = { fadeOut(commonTween) },
                 ) { AboutScreen(navController) }
 
                 composable(
                     route = "open_source",
                     enterTransition = { fadeIn(commonTween) },
-                    exitTransition = { fadeOut(commonTween) }
+                    exitTransition = { fadeOut(commonTween) },
                 ) { OpenSourceScreen(navController) }
             }
 
             KeyInputDialog(
                 show = showKeyDialog,
-                onDismiss = { showKeyDialog = false }
+                onDismiss = { showKeyDialog = false },
             )
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
             Box(
-                modifier = Modifier.align(Alignment.BottomCenter)
+                modifier = Modifier.align(Alignment.BottomCenter),
             ) {
                 BottomNavigationBar(navController)
             }
@@ -247,9 +255,11 @@ fun MainScreen() {
     }
 }
 
-
 @Composable
-fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
+fun KeyInputDialog(
+    show: Boolean,
+    onDismiss: () -> Unit,
+) {
     val context = LocalContext.current
     var inputText by remember { mutableStateOf("") }
     var errorType by remember { mutableIntStateOf(0) }
@@ -258,21 +268,22 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
     AnimatedVisibility(
         visible = show,
         enter = fadeIn(tween(250)) + scaleIn(initialScale = 0.8f, animationSpec = tween(250)),
-        exit = fadeOut(tween(200)) + scaleOut(targetScale = 0.8f, animationSpec = tween(200))
+        exit = fadeOut(tween(200)) + scaleOut(targetScale = 0.8f, animationSpec = tween(200)),
     ) {
         AlertDialog(
             onDismissRequest = { onDismiss() },
             title = {
                 Text(
                     text = stringResource(R.string.dialog_key_set),
-                    style = TextStyle(fontSize = 16.sp)
+                    style = TextStyle(fontSize = 16.sp),
                 )
             },
             text = {
                 Column(
-                    modifier = Modifier
-                        .verticalScroll(scrollState)
-                        .fillMaxWidth()
+                    modifier =
+                        Modifier
+                            .verticalScroll(scrollState)
+                            .fillMaxWidth(),
                 ) {
                     Text(stringResource(R.string.dialog_key_please_input))
                     Spacer(modifier = Modifier.height(8.dp))
@@ -287,22 +298,28 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                             Text("-----BEGIN EC PRIVATE KEY-----...", fontSize = 14.sp)
                         },
                         singleLine = false,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 120.dp, max = 240.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 120.dp, max = 240.dp),
                         isError = errorType != 0,
                         supportingText = {
                             when (errorType) {
-                                1 -> Text(
-                                    stringResource(R.string.dialog_key_input_no_empty),
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                                2 -> Text(
-                                    stringResource(R.string.dialog_key_input_invalid),
-                                    color = MaterialTheme.colorScheme.error
-                                )
+                                1 -> {
+                                    Text(
+                                        stringResource(R.string.dialog_key_input_no_empty),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+
+                                2 -> {
+                                    Text(
+                                        stringResource(R.string.dialog_key_input_invalid),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                             }
-                        }
+                        },
                     )
                 }
             },
@@ -310,23 +327,24 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                 Button(
                     onClick = {
                         val trimmedKey = inputText.trim()
-                        errorType = when {
-                            trimmedKey.isBlank() -> 1
-                            !KeyUtils.isValidECCKey(trimmedKey) -> 2
-                            else -> 0
-                        }
+                        errorType =
+                            when {
+                                trimmedKey.isBlank() -> 1
+                                !KeyUtils.isValidECCKey(trimmedKey) -> 2
+                                else -> 0
+                            }
                         if (errorType == 0) {
                             KeyUtils.saveKey(context, trimmedKey)
                             onDismiss()
                         }
-                    }
+                    },
                 ) { Text(stringResource(R.string.dialog_key_save)) }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
                     Text(stringResource(R.string.dialog_key_later))
                 }
-            }
+            },
         )
     }
 }

@@ -45,7 +45,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 
-class RootDbHelper(context: Context) : SQLiteOpenHelper(context, "root_manager.db", null, 1) {
+class RootDbHelper(
+    context: Context,
+) : SQLiteOpenHelper(context, "root_manager.db", null, 1) {
     override fun onCreate(db: SQLiteDatabase) {
         db.execSQL("CREATE TABLE root_apps (packageName TEXT PRIMARY KEY, allowed INTEGER)")
     }
@@ -60,16 +62,24 @@ class RootDbHelper(context: Context) : SQLiteOpenHelper(context, "root_manager.d
         return set
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int,
+    ) {
         db.execSQL("DROP TABLE IF EXISTS root_apps")
         onCreate(db)
     }
 
-    fun setAllowed(packageName: String, allowed: Boolean) {
-        val values = ContentValues().apply {
-            put("packageName", packageName)
-            put("allowed", if (allowed) 1 else 0)
-        }
+    fun setAllowed(
+        packageName: String,
+        allowed: Boolean,
+    ) {
+        val values =
+            ContentValues().apply {
+                put("packageName", packageName)
+                put("allowed", if (allowed) 1 else 0)
+            }
         writableDatabase.insertWithOnConflict("root_apps", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
 }
@@ -79,17 +89,21 @@ data class AppInfo(
     val packageName: String,
     val uid: Int,
     val isSystem: Boolean,
-    val isLaunchable: Boolean
+    val isLaunchable: Boolean,
 )
 
-enum class FilterMode(@param:StringRes val labelRes: Int) {
+enum class FilterMode(
+    @param:StringRes val labelRes: Int,
+) {
     ALL(R.string.all_app),
     LAUNCHABLE(R.string.can_launch_app),
     SYSTEM(R.string.system_app),
-    USER(R.string.user_app)
+    USER(R.string.user_app),
 }
 
-class AppViewModel(private val context: Context) : ViewModel() {
+class AppViewModel(
+    private val context: Context,
+) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
     private val dbHelper = RootDbHelper(context)
@@ -123,18 +137,20 @@ class AppViewModel(private val context: Context) : ViewModel() {
             }
 
             val pm = context.packageManager
-            val installed = pm.getInstalledPackages(PackageManager.GET_META_DATA)
-                .mapNotNull { pkg ->
-                    pkg.applicationInfo?.let { ai ->
-                        AppInfo(
-                            name = ai.loadLabel(pm).toString(),
-                            packageName = pkg.packageName,
-                            uid = ai.uid,
-                            isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                            isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null
-                        )
-                    }
-                }.sortedBy { it.name.lowercase() }
+            val installed =
+                pm
+                    .getInstalledPackages(PackageManager.GET_META_DATA)
+                    .mapNotNull { pkg ->
+                        pkg.applicationInfo?.let { ai ->
+                            AppInfo(
+                                name = ai.loadLabel(pm).toString(),
+                                packageName = pkg.packageName,
+                                uid = ai.uid,
+                                isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                                isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
+                            )
+                        }
+                    }.sortedBy { it.name.lowercase() }
 
             allApps = installed
             isLoaded = true
@@ -142,12 +158,16 @@ class AppViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-    fun toggleRootPermission(app: AppInfo, allow: Boolean) {
-        allowedApps = if (allow) {
-            allowedApps + app.packageName
-        } else {
-            allowedApps - app.packageName
-        }
+    fun toggleRootPermission(
+        app: AppInfo,
+        allow: Boolean,
+    ) {
+        allowedApps =
+            if (allow) {
+                allowedApps + app.packageName
+            } else {
+                allowedApps - app.packageName
+            }
 
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, allow)
@@ -156,7 +176,9 @@ class AppViewModel(private val context: Context) : ViewModel() {
     }
 }
 
-class AppViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class AppViewModelFactory(
+    private val context: Context,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(context) as T
 }
@@ -178,19 +200,22 @@ fun HistoryScreen() {
     }
 
     LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
-        apps = viewModel.allApps.filter { app ->
-            val passFilter = when (filterMode) {
-                FilterMode.ALL -> true
-                FilterMode.LAUNCHABLE -> app.isLaunchable
-                FilterMode.SYSTEM -> app.isSystem
-                FilterMode.USER -> !app.isSystem
+        apps =
+            viewModel.allApps.filter { app ->
+                val passFilter =
+                    when (filterMode) {
+                        FilterMode.ALL -> true
+                        FilterMode.LAUNCHABLE -> app.isLaunchable
+                        FilterMode.SYSTEM -> app.isSystem
+                        FilterMode.USER -> !app.isSystem
+                    }
+                val q = searchQuery.trim().lowercase()
+                val passSearch =
+                    q.isEmpty() ||
+                        app.name.lowercase().contains(q) ||
+                        app.packageName.lowercase().contains(q)
+                passFilter && passSearch
             }
-            val q = searchQuery.trim().lowercase()
-            val passSearch = q.isEmpty() || 
-                             app.name.lowercase().contains(q) || 
-                             app.packageName.lowercase().contains(q)
-            passFilter && passSearch
-        }
     }
 
     Scaffold(
@@ -199,24 +224,25 @@ fun HistoryScreen() {
                 title = {
                     if (isSearching) {
                         TextField(
-    value = searchQuery,
-    onValueChange = { searchQuery = it },
-    placeholder = { Text("搜索应用...") },
-    modifier = Modifier.fillMaxWidth(),
-    singleLine = true,
-    colors = TextFieldDefaults.colors(
-        focusedContainerColor = Color.Transparent,
-        unfocusedContainerColor = Color.Transparent,
-        disabledContainerColor = Color.Transparent,
-        focusedIndicatorColor = Color.Transparent,
-        unfocusedIndicatorColor = Color.Transparent
-    )
-)
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            placeholder = { Text("搜索应用...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors =
+                                TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                ),
+                        )
                     } else {
                         Text(
                             text = stringResource(filterMode.labelRes),
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
                         )
                     }
                 },
@@ -248,7 +274,7 @@ fun HistoryScreen() {
                         DropdownMenu(
                             expanded = menuExpanded,
                             onDismissRequest = { menuExpanded = false },
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
                         ) {
                             FilterMode.entries.forEach { mode ->
                                 DropdownMenuItem(
@@ -256,42 +282,45 @@ fun HistoryScreen() {
                                     onClick = {
                                         filterMode = mode
                                         menuExpanded = false
-                                    }
+                                    },
                                 )
                             }
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
-        }
+        },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
         ) {
             if (!viewModel.isLoaded) {
                 CircularProgressIndicator(strokeWidth = 3.dp)
             } else if (apps.isEmpty()) {
                 Text(
                     text = "未找到相关应用",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(
-        top = 12.dp,
-        bottom = 80.dp, 
-        start = 0.dp,
-        end = 0.dp
-    )
+                    contentPadding =
+                        PaddingValues(
+                            top = 12.dp,
+                            bottom = 80.dp,
+                            start = 0.dp,
+                            end = 0.dp,
+                        ),
                 ) {
                     items(apps, key = { it.packageName }) { app ->
                         AppInfoItem(
@@ -299,7 +328,7 @@ fun HistoryScreen() {
                             isAllowed = viewModel.allowedApps.contains(app.packageName),
                             onToggle = { checked ->
                                 viewModel.toggleRootPermission(app, checked)
-                            }
+                            },
                         )
                     }
                 }
@@ -312,30 +341,33 @@ fun HistoryScreen() {
 fun AppInfoItem(
     app: AppInfo,
     isAllowed: Boolean,
-    onToggle: (Boolean) -> Unit
+    onToggle: (Boolean) -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                        shape = RoundedCornerShape(14.dp)
-                    )
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            shape = RoundedCornerShape(14.dp),
+                        ),
             ) {
                 AppIcon(packageName = app.packageName, modifier = Modifier.size(30.dp))
             }
@@ -343,67 +375,74 @@ fun AppInfoItem(
             Spacer(modifier = Modifier.width(16.dp))
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = app.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
+                    maxLines = 1,
                 )
                 Text(
                     text = "${app.packageName} • UID: ${app.uid}",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    maxLines = 1
+                    maxLines = 1,
                 )
             }
             Switch(
                 checked = isAllowed,
                 onCheckedChange = onToggle,
-                thumbContent = if (isAllowed) {
-                    {
-                        Icon(
-                            imageVector = Icons.Filled.CheckCircle,
-                            contentDescription = null,
-                            modifier = Modifier.size(SwitchDefaults.IconSize)
-                        )
-                    }
-                } else null
+                thumbContent =
+                    if (isAllowed) {
+                        {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(SwitchDefaults.IconSize),
+                            )
+                        }
+                    } else {
+                        null
+                    },
             )
         }
     }
 }
 
 @Composable
-fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
+fun AppIcon(
+    packageName: String,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                context.packageManager
-                    .getApplicationIcon(packageName)
-                    .toBitmap()
-                    .asImageBitmap()
-            } catch (e: Exception) {
-                null
+        value =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.packageManager
+                        .getApplicationIcon(packageName)
+                        .toBitmap()
+                        .asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
             }
-        }
     }
 
     if (iconBitmap != null) {
         Image(
             bitmap = iconBitmap!!,
             contentDescription = null,
-            modifier = modifier
+            modifier = modifier,
         )
     } else {
         Icon(
             imageVector = Icons.Default.Android,
             contentDescription = null,
             modifier = modifier,
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
         )
     }
 }

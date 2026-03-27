@@ -61,7 +61,7 @@ import me.nekosu.aqnya.util.getAppVersion
 enum class InstallStatus {
     CHECKING,
     INSTALLED,
-    NOT_INSTALLED
+    NOT_INSTALLED,
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,10 +72,11 @@ fun HomeScreen() {
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
 
     LaunchedEffect(Unit) {
-        installStatus = withContext(Dispatchers.IO) {
-            val result = ncore().ctl(1)
-            if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
-        }
+        installStatus =
+            withContext(Dispatchers.IO) {
+                val result = ncore().ctl(1)
+                if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
+            }
     }
 
     Scaffold(
@@ -85,22 +86,24 @@ fun HomeScreen() {
                     Text(
                         text = "nekosu",
                         style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
-        }
+        },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatusCard(
                 status = installStatus,
@@ -110,7 +113,7 @@ fun HomeScreen() {
                     } else {
                         Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
                     }
-                }
+                },
             )
             DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
@@ -122,90 +125,104 @@ fun HomeScreen() {
 }
 
 @Composable
-fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
-    val glassColor = when (status) {
-        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
-        InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
-        InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val contentColor = when (status) {
-        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
-        InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
-        InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val iconVector = when (status) {
-        InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
-        InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
-        InstallStatus.CHECKING -> Icons.Filled.Refresh
-    }
-    val titleText = when (status) {
-        InstallStatus.INSTALLED -> "已安装"
-        InstallStatus.NOT_INSTALLED -> "未安装"
-        InstallStatus.CHECKING -> "检查中..."
-    }
-    val subText = when (status) {
-        InstallStatus.INSTALLED -> "服务运行正常"
-        InstallStatus.NOT_INSTALLED -> "点击安装"
-        InstallStatus.CHECKING -> "正在验证服务状态"
-    }
+fun StatusCard(
+    status: InstallStatus,
+    onClick: () -> Unit,
+) {
+    val glassColor =
+        when (status) {
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
+            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+            InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    val contentColor =
+        when (status) {
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
+            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+            InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    val iconVector =
+        when (status) {
+            InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
+            InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
+            InstallStatus.CHECKING -> Icons.Filled.Refresh
+        }
+    val titleText =
+        when (status) {
+            InstallStatus.INSTALLED -> "已安装"
+            InstallStatus.NOT_INSTALLED -> "未安装"
+            InstallStatus.CHECKING -> "检查中..."
+        }
+    val subText =
+        when (status) {
+            InstallStatus.INSTALLED -> "服务运行正常"
+            InstallStatus.NOT_INSTALLED -> "点击安装"
+            InstallStatus.CHECKING -> "正在验证服务状态"
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)),
     ) {
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            glassColor.copy(alpha = 0.25f),
-                            glassColor.copy(alpha = 0.05f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .blur(32.dp)
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        brush =
+                            Brush.radialGradient(
+                                colors =
+                                    listOf(
+                                        glassColor.copy(alpha = 0.25f),
+                                        glassColor.copy(alpha = 0.05f),
+                                        Color.Transparent,
+                                    ),
+                            ),
+                    ).blur(32.dp),
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
-            colors = CardDefaults.cardColors(
-                containerColor = glassColor.copy(alpha = 0.08f)
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = glassColor.copy(alpha = 0.08f),
+                ),
             shape = RoundedCornerShape(28.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .background(
-                            color = glassColor.copy(alpha = 0.15f),
-                            shape = CircleShape
-                        )
+                    modifier =
+                        Modifier
+                            .size(50.dp)
+                            .background(
+                                color = glassColor.copy(alpha = 0.15f),
+                                shape = CircleShape,
+                            ),
                 ) {
                     if (status == InstallStatus.CHECKING) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(24.dp),
                             color = contentColor,
-                            strokeWidth = 2.5.dp
+                            strokeWidth = 2.5.dp,
                         )
                     } else {
                         Icon(
                             imageVector = iconVector,
                             contentDescription = null,
                             tint = contentColor,
-                            modifier = Modifier.size(24.dp)
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }
@@ -215,12 +232,12 @@ fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
                         text = titleText,
                         style = MaterialTheme.typography.titleMedium,
                         color = contentColor,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
                     )
                     Text(
                         text = subText,
                         style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = 0.7f)
+                        color = contentColor.copy(alpha = 0.7f),
                     )
                 }
 
@@ -228,18 +245,19 @@ fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
 
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .background(
-                            color = glassColor.copy(alpha = 0.12f),
-                            shape = CircleShape
-                        )
+                    modifier =
+                        Modifier
+                            .size(30.dp)
+                            .background(
+                                color = glassColor.copy(alpha = 0.12f),
+                                shape = CircleShape,
+                            ),
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
                         contentDescription = null,
                         tint = contentColor.copy(alpha = 0.6f),
-                        modifier = Modifier.size(13.dp)
+                        modifier = Modifier.size(13.dp),
                     )
                 }
             }
@@ -252,7 +270,7 @@ data class StatusConfig(
     val contentColor: androidx.compose.ui.graphics.Color,
     val icon: ImageVector,
     val title: String,
-    val subtitle: String
+    val subtitle: String,
 )
 
 @Composable
@@ -260,50 +278,54 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val appVersion = remember { getAppVersion(context) }
 
-    val items = listOf(
-        Triple(Icons.Filled.Memory,       "内核版本",   System.getProperty("os.version") ?: "Unavailable"),
-        Triple(Icons.Filled.Android,      "Android 版本", Build.VERSION.RELEASE),
-        Triple(Icons.Filled.PhoneAndroid, "设备",       "${Build.MANUFACTURER} ${Build.MODEL}"),
-        Triple(Icons.Filled.Settings,     "管理器版本", appVersion)
-    )
+    val items =
+        listOf(
+            Triple(Icons.Filled.Memory, "内核版本", System.getProperty("os.version") ?: "Unavailable"),
+            Triple(Icons.Filled.Android, "Android 版本", Build.VERSION.RELEASE),
+            Triple(Icons.Filled.PhoneAndroid, "设备", "${Build.MANUFACTURER} ${Build.MODEL}"),
+            Triple(Icons.Filled.Settings, "管理器版本", appVersion),
+        )
 
     Box(
-        modifier = modifier.clip(RoundedCornerShape(28.dp))
+        modifier = modifier.clip(RoundedCornerShape(28.dp)),
     ) {
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .blur(24.dp)
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        brush =
+                            Brush.verticalGradient(
+                                colors =
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                        Color.Transparent,
+                                    ),
+                            ),
+                    ).blur(24.dp),
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-            )
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                ),
         ) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 items.forEachIndexed { index, (icon, title, value) ->
                     DeviceInfoItem(
                         icon = icon,
                         title = title,
-                        value = value
+                        value = value,
                     )
                     if (index < items.lastIndex) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 20.dp),
                             thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
                         )
                     }
                 }
@@ -313,27 +335,34 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun DeviceInfoItem(icon: ImageVector, title: String, value: String, modifier: Modifier = Modifier) {
+fun DeviceInfoItem(
+    icon: ImageVector,
+    title: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(38.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                    shape = RoundedCornerShape(11.dp)
-                )
+            modifier =
+                Modifier
+                    .size(38.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(11.dp),
+                    ),
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(20.dp),
             )
         }
 
@@ -344,13 +373,13 @@ fun DeviceInfoItem(icon: ImageVector, title: String, value: String, modifier: Mo
                 text = title,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
             )
         }
     }

@@ -11,10 +11,15 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandler {
+class CrashHandler(
+    private val context: Context,
+) : Thread.UncaughtExceptionHandler {
     private val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
 
-    override fun uncaughtException(thread: Thread, throwable: Throwable) {
+    override fun uncaughtException(
+        thread: Thread,
+        throwable: Throwable,
+    ) {
         handleException(throwable)
         defaultHandler?.uncaughtException(thread, throwable)
     }
@@ -23,7 +28,7 @@ class CrashHandler(private val context: Context) : Thread.UncaughtExceptionHandl
         val logDir =
             File(
                 Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "nekosu_crashes"
+                "nekosu_crashes",
             )
         if (!logDir.exists()) {
             logDir.mkdirs()

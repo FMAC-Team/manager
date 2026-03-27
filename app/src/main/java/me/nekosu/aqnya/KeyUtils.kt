@@ -33,15 +33,15 @@ object KeyUtils {
 
         val keyGen = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
         keyGen.init(
-            KeyGenParameterSpec.Builder(
-                KEYSTORE_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
-            )
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+            KeyGenParameterSpec
+                .Builder(
+                    KEYSTORE_ALIAS,
+                    KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT,
+                ).setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                 .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                 .setKeySize(256)
                 .setUserAuthenticationRequired(false)
-                .build()
+                .build(),
         )
         keyGen.generateKey()
     }
@@ -55,7 +55,10 @@ object KeyUtils {
 
     fun getKeyFilePath(context: Context): String = File(context.filesDir, KEY_FILE_NAME).absolutePath
 
-    fun saveKey(context: Context, key: String) {
+    fun saveKey(
+        context: Context,
+        key: String,
+    ) {
         try {
             val keyBytes = key.toByteArray(Charsets.UTF_8)
             if (keyBytes.size > MAX_KEY_SIZE) return
@@ -92,7 +95,7 @@ object KeyUtils {
             cipher.init(
                 Cipher.DECRYPT_MODE,
                 getWrappingKey(),
-                GCMParameterSpec(GCM_TAG_LENGTH, iv)
+                GCMParameterSpec(GCM_TAG_LENGTH, iv),
             )
             val plaintext = cipher.doFinal(ciphertext)
             val result = String(plaintext, Charsets.UTF_8)
@@ -112,7 +115,10 @@ object KeyUtils {
         }
     }
 
-    fun getTotpToken(secretBase32: String, timeInterval: Long = 30L): String {
+    fun getTotpToken(
+        secretBase32: String,
+        timeInterval: Long = 30L,
+    ): String {
         try {
             val secretBytes = decodeBase32(secretBase32)
             val time = System.currentTimeMillis() / 1000 / timeInterval
@@ -139,8 +145,13 @@ object KeyUtils {
 
     private fun decodeBase32(base32: String): ByteArray {
         val base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
-        val noPadding = base32.trim().replace(" ", "").replace("-", "")
-            .uppercase(Locale.ROOT).trimEnd('=')
+        val noPadding =
+            base32
+                .trim()
+                .replace(" ", "")
+                .replace("-", "")
+                .uppercase(Locale.ROOT)
+                .trimEnd('=')
 
         val bytes = ArrayList<Byte>()
         var buffer = 0
@@ -159,71 +170,105 @@ object KeyUtils {
         return bytes.toByteArray()
     }
 
-fun isValidECCKey(keyString: String): Boolean {
-    if (keyString.isBlank()) return false
+    fun isValidECCKey(keyString: String): Boolean {
+        if (keyString.isBlank()) return false
 
-    val cleanKey = keyString
-        .lines()
-        .map { it.trim() }
-        .filter { it.isNotEmpty() && !it.startsWith("-----") }
-        .joinToString("")
+        val cleanKey =
+            keyString
+                .lines()
+                .map { it.trim() }
+                .filter { it.isNotEmpty() && !it.startsWith("-----") }
+                .joinToString("")
 
-    if (cleanKey.isEmpty()) return false
+        if (cleanKey.isEmpty()) return false
 
-    return try {
-        val keyBytes = Base64.decode(cleanKey, Base64.DEFAULT)
-        val factory = KeyFactory.getInstance("EC", "AndroidOpenSSL")
+        return try {
+            val keyBytes = Base64.decode(cleanKey, Base64.DEFAULT)
+            val factory = KeyFactory.getInstance("EC", "AndroidOpenSSL")
 
-        try {
-            factory.generatePrivate(PKCS8EncodedKeySpec(keyBytes))
-            return true
-        } catch (_: Exception) {}
+            try {
+                factory.generatePrivate(PKCS8EncodedKeySpec(keyBytes))
+                return true
+            } catch (_: Exception) {
+            }
 
-        try {
-            factory.generatePrivate(PKCS8EncodedKeySpec(sec1ToPkcs8(keyBytes)))
-            return true
-        } catch (_: Exception) {}
+            try {
+                factory.generatePrivate(PKCS8EncodedKeySpec(sec1ToPkcs8(keyBytes)))
+                return true
+            } catch (_: Exception) {
+            }
 
-        Log.e("KeyUtils", "No valid private key!")
-        false
-    } catch (e: Exception) {
-        Log.e("KeyUtils", "isValidECCKey error: $e")
-        false
+            Log.e("KeyUtils", "No valid private key!")
+            false
+        } catch (e: Exception) {
+            Log.e("KeyUtils", "isValidECCKey error: $e")
+            false
+        }
     }
-}
 
-private fun sec1ToPkcs8(sec1Der: ByteArray): ByteArray {
-    // AlgorithmIdentifier for EC / prime256v1
-    // SEQUENCE { OID 1.2.840.10045.2.1, OID 1.2.840.10045.3.1.7 }
-    val algorithmIdentifier = byteArrayOf(
-        0x30, 0x13,
-        0x06, 0x07, 0x2a, 0x86.toByte(), 0x48, 0xce.toByte(), 0x3d, 0x02, 0x01,
-        0x06, 0x08, 0x2a, 0x86.toByte(), 0x48, 0xce.toByte(), 0x3d, 0x03, 0x01, 0x07
-    )
+    private fun sec1ToPkcs8(sec1Der: ByteArray): ByteArray {
+        // AlgorithmIdentifier for EC / prime256v1
+        // SEQUENCE { OID 1.2.840.10045.2.1, OID 1.2.840.10045.3.1.7 }
+        val algorithmIdentifier =
+            byteArrayOf(
+                0x30,
+                0x13,
+                0x06,
+                0x07,
+                0x2a,
+                0x86.toByte(),
+                0x48,
+                0xce.toByte(),
+                0x3d,
+                0x02,
+                0x01,
+                0x06,
+                0x08,
+                0x2a,
+                0x86.toByte(),
+                0x48,
+                0xce.toByte(),
+                0x3d,
+                0x03,
+                0x01,
+                0x07,
+            )
 
-    // OCTET STRING wrapping sec1
-    val octetString = derTlv(0x04, sec1Der)
-    val version = byteArrayOf(0x02, 0x01, 0x00)
-    val inner = version + algorithmIdentifier + octetString
+        // OCTET STRING wrapping sec1
+        val octetString = derTlv(0x04, sec1Der)
+        val version = byteArrayOf(0x02, 0x01, 0x00)
+        val inner = version + algorithmIdentifier + octetString
 
-    return derTlv(0x30, inner)
-}
-
-private fun derTlv(tag: Int, value: ByteArray): ByteArray {
-    val len = value.size
-    val lenBytes = when {
-        len < 0x80 -> byteArrayOf(len.toByte())
-        len < 0x100 -> byteArrayOf(0x81.toByte(), len.toByte())
-        else -> byteArrayOf(
-            0x82.toByte(),
-            (len shr 8).toByte(),
-            (len and 0xff).toByte()
-        )
+        return derTlv(0x30, inner)
     }
-    return byteArrayOf(tag.toByte()) + lenBytes + value
-}
-    
-       fun loadKeyBytes(context: Context): ByteArray? {
+
+    private fun derTlv(
+        tag: Int,
+        value: ByteArray,
+    ): ByteArray {
+        val len = value.size
+        val lenBytes =
+            when {
+                len < 0x80 -> {
+                    byteArrayOf(len.toByte())
+                }
+
+                len < 0x100 -> {
+                    byteArrayOf(0x81.toByte(), len.toByte())
+                }
+
+                else -> {
+                    byteArrayOf(
+                        0x82.toByte(),
+                        (len shr 8).toByte(),
+                        (len and 0xff).toByte(),
+                    )
+                }
+            }
+        return byteArrayOf(tag.toByte()) + lenBytes + value
+    }
+
+    fun loadKeyBytes(context: Context): ByteArray? {
         return try {
             val file = File(context.filesDir, KEY_FILE_NAME)
             if (!file.exists()) return null
@@ -241,5 +286,4 @@ private fun derTlv(tag: Int, value: ByteArray): ByteArray {
             null
         }
     }
-    
 }
