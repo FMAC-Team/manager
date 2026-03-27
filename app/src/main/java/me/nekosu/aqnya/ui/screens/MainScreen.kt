@@ -126,7 +126,7 @@ fun BottomNavigationBar(navController: NavController) {
         color = containerColor,
         modifier = Modifier
             .height(48.dp)
-            .width(itemWidth)  // 直接控制宽度
+            .width(itemWidth)
     ) {
         Box(
             contentAlignment = Alignment.Center,

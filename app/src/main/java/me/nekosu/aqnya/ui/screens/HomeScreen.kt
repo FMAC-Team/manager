@@ -2,15 +2,19 @@ package me.nekosu.aqnya.ui.screens
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -19,13 +23,13 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -40,6 +44,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +55,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.getAppVersion
 
@@ -61,16 +68,15 @@ enum class InstallStatus {
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-
     var showInstallSheet by remember { mutableStateOf(false) }
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
 
-LaunchedEffect(Unit) {
-    installStatus = withContext(Dispatchers.IO) {
-        val result = ncore().ctl(1)
-        if (result == 0){ InstallStatus.INSTALLED} else {InstallStatus.NOT_INSTALLED}
+    LaunchedEffect(Unit) {
+        installStatus = withContext(Dispatchers.IO) {
+            val result = ncore().ctl(1)
+            if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
+        }
     }
-}
 
     Scaffold(
         topBar = {
@@ -82,8 +88,7 @@ LaunchedEffect(Unit) {
                         fontWeight = FontWeight.Bold
                     )
                 },
-                colors =
-                TopAppBarDefaults.centerAlignedTopAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
@@ -91,12 +96,11 @@ LaunchedEffect(Unit) {
         }
     ) { innerPadding ->
         Column(
-            modifier =
-            Modifier
+            modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             StatusCard(
                 status = installStatus,
@@ -108,160 +112,146 @@ LaunchedEffect(Unit) {
                     }
                 }
             )
-            
-        //    superinfo(0,0)
-
-            DeviceInfoCard(
-                modifier = Modifier.fillMaxWidth(),
-            )
-
+            DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
 
     if (showInstallSheet) {
-    ncore().helloLog(); 
+        ncore().helloLog()
     }
 }
-
-@Composable
-fun superinfo(su:Int,mod:Int) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top=10.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp) 
-    ) {
-        Card(
-            modifier = Modifier.weight(1f),
-colors =
-        CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "超级用户",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = su.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
-            )
-            }
-        }
-
-        Card(
-            modifier = Modifier.weight(1f),
-            colors =
-        CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-            shape = RoundedCornerShape(24.dp),
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "模块",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = mod.toString(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
-            )
-            }
-        }
-    }
-}
-
 
 @Composable
 fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
-    val (containerColor, contentColor, iconVector, titleText, subText) =
-        when (status) {
-            InstallStatus.INSTALLED ->
-                StatusConfig(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.primary,
-                    Icons.Filled.CheckCircle,
-                    "已安装",
-                    "运行中"
-                )
-            InstallStatus.NOT_INSTALLED ->
-                StatusConfig(
-                    MaterialTheme.colorScheme.errorContainer,
-                    MaterialTheme.colorScheme.error,
-                    Icons.Filled.SystemUpdate,
-                    "未安装",
-                    "点击安装"
-                )
-            InstallStatus.CHECKING ->
-                StatusConfig(
-                    MaterialTheme.colorScheme.surfaceVariant,
-                    MaterialTheme.colorScheme.onSurfaceVariant,
-                    Icons.Filled.Refresh,
-                    "检查中...",
-                    "正在验证服务状态"
-                )
-        }
+    val glassColor = when (status) {
+        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
+        InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+        InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val contentColor = when (status) {
+        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
+        InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+        InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val iconVector = when (status) {
+        InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
+        InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
+        InstallStatus.CHECKING -> Icons.Filled.Refresh
+    }
+    val titleText = when (status) {
+        InstallStatus.INSTALLED -> "已安装"
+        InstallStatus.NOT_INSTALLED -> "未安装"
+        InstallStatus.CHECKING -> "检查中..."
+    }
+    val subText = when (status) {
+        InstallStatus.INSTALLED -> "服务运行正常"
+        InstallStatus.NOT_INSTALLED -> "点击安装"
+        InstallStatus.CHECKING -> "正在验证服务状态"
+    }
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onClick,
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
     ) {
-        Row(
-            modifier =
-            Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (status == InstallStatus.CHECKING) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(28.dp),
-                    color = contentColor,
-                    strokeWidth = 3.dp
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            glassColor.copy(alpha = 0.25f),
+                            glassColor.copy(alpha = 0.05f),
+                            Color.Transparent
+                        )
+                    )
                 )
-            } else {
-                Icon(
-                    imageVector = iconVector,
-                    contentDescription = null,
-                    tint = contentColor,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
+                .blur(32.dp)
+        )
 
-            Column {
-                Text(
-                    text = titleText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = contentColor,
-                    fontWeight = FontWeight.SemiBold
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onClick,
+            colors = CardDefaults.cardColors(
+                containerColor = glassColor.copy(alpha = 0.08f)
+            ),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        glassColor.copy(alpha = 0.45f),
+                        glassColor.copy(alpha = 0.10f)
+                    )
                 )
-                Text(
-                    text = subText,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = contentColor.copy(alpha = 0.8f)
-                )
-            }
-            Spacer(modifier = Modifier.weight(1f))
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                contentDescription = "操作",
-                tint = contentColor.copy(alpha = 0.6f),
-                modifier = Modifier.size(20.dp)
             )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .background(
+                            color = glassColor.copy(alpha = 0.15f),
+                            shape = CircleShape
+                        )
+                ) {
+                    if (status == InstallStatus.CHECKING) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = contentColor,
+                            strokeWidth = 2.5.dp
+                        )
+                    } else {
+                        Icon(
+                            imageVector = iconVector,
+                            contentDescription = null,
+                            tint = contentColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                }
+
+                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = titleText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = contentColor,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = subText,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = contentColor.copy(alpha = 0.7f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(30.dp)
+                        .background(
+                            color = glassColor.copy(alpha = 0.12f),
+                            shape = CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                        contentDescription = null,
+                        tint = contentColor.copy(alpha = 0.6f),
+                        modifier = Modifier.size(13.dp)
+                    )
+                }
+            }
         }
     }
 }
@@ -277,48 +267,65 @@ data class StatusConfig(
 @Composable
 fun DeviceInfoCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    val appVersion =
-        remember {
-            getAppVersion(context)
-        }
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(24.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors =
-        CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+    val appVersion = remember { getAppVersion(context) }
+
+    val items = listOf(
+        Triple(Icons.Filled.Memory,       "内核版本",   System.getProperty("os.version") ?: "Unavailable"),
+        Triple(Icons.Filled.Android,      "Android 版本", Build.VERSION.RELEASE),
+        Triple(Icons.Filled.PhoneAndroid, "设备",       "${Build.MANUFACTURER} ${Build.MODEL}"),
+        Triple(Icons.Filled.Settings,     "管理器版本", appVersion)
+    )
+
+    Box(
+        modifier = modifier.clip(RoundedCornerShape(28.dp))
     ) {
-        Column(
-            modifier =
-            Modifier
-                .padding(vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .blur(24.dp)
+        )
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(28.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+            ),
+            border = androidx.compose.foundation.BorderStroke(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                    )
+                )
+            )
         ) {
-            DeviceInfoItem(
-                icon = Icons.Filled.Memory,
-                title = "内核版本",
-                value = System.getProperty("os.version") ?: "Unavailable"
-            )
-
-            DeviceInfoItem(
-                icon = Icons.Filled.Android,
-                title = "Android 版本",
-                value = Build.VERSION.RELEASE
-            )
-
-            DeviceInfoItem(
-                icon = Icons.Filled.PhoneAndroid,
-                title = "设备",
-                value = "${Build.MANUFACTURER} ${Build.MODEL}"
-            )
-
-            DeviceInfoItem(
-                icon = Icons.Filled.Settings,
-                title = "管理器版本",
-                value = appVersion
-            )
+            Column(modifier = Modifier.padding(vertical = 8.dp)) {
+                items.forEachIndexed { index, (icon, title, value) ->
+                    DeviceInfoItem(
+                        icon = icon,
+                        title = title,
+                        value = value
+                    )
+                    if (index < items.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 20.dp),
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -326,37 +333,42 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
 @Composable
 fun DeviceInfoItem(icon: ImageVector, title: String, value: String, modifier: Modifier = Modifier) {
     Row(
-        modifier =
-        modifier
+        modifier = modifier
             .fillMaxWidth()
-            //  .clickable { onCopy("$title: $value") }
-            .padding(horizontal = 24.dp, vertical = 6.dp),
+            .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // icons
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
-        )
-
-        Spacer(modifier = Modifier.width(20.dp)) // space icon and fonts
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(38.dp)
+                .background(
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                    shape = RoundedCornerShape(11.dp)
+                )
         ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+                fontWeight = FontWeight.Medium
             )
             Text(
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.2
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold
             )
         }
     }
