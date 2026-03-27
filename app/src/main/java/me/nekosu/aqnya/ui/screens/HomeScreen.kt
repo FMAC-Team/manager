@@ -176,16 +176,7 @@ fun StatusCard(status: InstallStatus, onClick: () -> Unit) {
                 containerColor = glassColor.copy(alpha = 0.08f)
             ),
             shape = RoundedCornerShape(28.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        glassColor.copy(alpha = 0.45f),
-                        glassColor.copy(alpha = 0.10f)
-                    )
-                )
-            )
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
             Row(
                 modifier = Modifier
@@ -299,15 +290,6 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-            ),
-            border = androidx.compose.foundation.BorderStroke(
-                width = 1.dp,
-                brush = Brush.linearGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f),
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                    )
-                )
             )
         ) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
