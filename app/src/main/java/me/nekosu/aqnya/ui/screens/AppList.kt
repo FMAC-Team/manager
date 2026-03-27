@@ -7,8 +7,15 @@ import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import androidx.annotation.StringRes
+import androidx.compose.animation.*
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -31,23 +38,16 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.tween
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.animation.*
-import androidx.compose.ui.unit.sp
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -348,27 +348,33 @@ fun HistoryScreen() {
 }
 
 @Composable
-fun AppInfoItem(app: AppInfo, isAllowed: Boolean, onToggle: (Boolean) -> Unit) {
+fun AppInfoItem(
+    app: AppInfo,
+    isAllowed: Boolean,
+    onToggle: (Boolean) -> Unit,
+) {
     var expanded by remember { mutableStateOf(false) }
     var isOverflown by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f))
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                    .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(0.08f), RoundedCornerShape(14.dp)),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(MaterialTheme.colorScheme.primary.copy(0.08f), RoundedCornerShape(14.dp)),
+                contentAlignment = Alignment.Center,
             ) {
                 AppIcon(app.packageName, Modifier.size(30.dp))
             }
@@ -376,27 +382,28 @@ fun AppInfoItem(app: AppInfo, isAllowed: Boolean, onToggle: (Boolean) -> Unit) {
             Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                      .padding(end = 24.dp)
-                    .let { modifier ->
-                        if (isOverflown || expanded) {
-                            modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) { expanded = !expanded }
-                        } else {
-                            modifier
-                        }
-                    },
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(end = 24.dp)
+                        .let { modifier ->
+                            if (isOverflown || expanded) {
+                                modifier.clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) { expanded = !expanded }
+                            } else {
+                                modifier
+                            }
+                        },
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
                     text = app.name,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
                 )
 
                 AnimatedContent(
@@ -404,26 +411,27 @@ fun AppInfoItem(app: AppInfo, isAllowed: Boolean, onToggle: (Boolean) -> Unit) {
                     transitionSpec = {
                         val fastSpec = tween<IntSize>(durationMillis = 250)
                         val fastFadeSpec = tween<Float>(durationMillis = 200)
-                        
+
                         (fadeIn(fastFadeSpec) + expandHorizontally(animationSpec = fastSpec, expandFrom = Alignment.Start))
                             .togetherWith(
-                                fadeOut(fastFadeSpec) + shrinkHorizontally(animationSpec = fastSpec, shrinkTowards = Alignment.Start)
+                                fadeOut(fastFadeSpec) + shrinkHorizontally(animationSpec = fastSpec, shrinkTowards = Alignment.Start),
                             )
                     },
-                    label = "textReveal"
-                ){ isExpanded ->
+                    label = "textReveal",
+                ) { isExpanded ->
                     Text(
                         text = "${app.packageName} • UID: ${app.uid}",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp
-                        ),
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                            ),
                         maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis,
                         onTextLayout = { textLayoutResult ->
                             if (!isExpanded) {
                                 isOverflown = textLayoutResult.hasVisualOverflow
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -431,16 +439,16 @@ fun AppInfoItem(app: AppInfo, isAllowed: Boolean, onToggle: (Boolean) -> Unit) {
             Switch(
                 checked = isAllowed,
                 onCheckedChange = onToggle,
-                thumbContent = if (isAllowed) {
-                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                } else null
+                thumbContent =
+                    if (isAllowed) {
+                        { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                    } else {
+                        null
+                    },
             )
         }
     }
 }
-
-
-
 
 @Composable
 fun AppIcon(
