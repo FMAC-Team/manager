@@ -2,6 +2,8 @@ package me.nekosu.aqnya.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,6 +61,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.layout.width
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.BottomNavItem
@@ -83,68 +88,85 @@ fun BottomNavigationBar(navController: NavController) {
             shadowElevation = 16.dp,
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
+                    .height(48.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                BottomNavItem.Companion.items.forEach { item ->
-                    val selected = currentRoute == item.route
-                    val containerColor by animateColorAsState(
-                        targetValue = if (selected)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            Color.Transparent,
-                        animationSpec = tween(300),
-                        label = "navItemBg"
-                    )
+       BottomNavItem.items.forEach { item ->
+    val selected = currentRoute == item.route
 
-                    Surface(
-                        onClick = {
-                            navController.navigate(item.route) {
-                                launchSingleTop = true
-                                restoreState = true
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                            }
-                        },
-                        shape = RoundedCornerShape(50),
-                        color = containerColor,
-                        modifier = Modifier.height(48.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = if (selected) 16.dp else 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                                contentDescription = item.title,
-                                tint = if (selected)
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(22.dp)
-                            )
-                            AnimatedVisibility(
-                                visible = selected,
-                                enter = fadeIn(tween(200)) + expandHorizontally(tween(300)),
-                                exit = fadeOut(tween(150)) + shrinkHorizontally(tween(250))
-                            ) {
-                                Text(
-                                    text = item.title,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    maxLines = 1
-                                )
-                            }
-                        }
-                    }
+    val containerColor by animateColorAsState(
+        targetValue = if (selected)
+            MaterialTheme.colorScheme.primaryContainer
+        else
+            Color.Transparent,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "navItemBg"
+    )
+
+    val itemWidth by animateDpAsState(
+        targetValue = if (selected) 88.dp else 48.dp,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "navItemWidth"
+    )
+
+    Surface(
+        onClick = {
+            navController.navigate(item.route) {
+                launchSingleTop = true
+                restoreState = true
+                popUpTo(navController.graph.findStartDestination().id) {
+                    saveState = true
+                }
+            }
+        },
+        shape = RoundedCornerShape(50),
+        color = containerColor,
+        modifier = Modifier
+            .height(48.dp)
+            .width(itemWidth)  // 直接控制宽度
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.padding(horizontal = 12.dp)
+            ) {
+                Icon(
+                    imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                    contentDescription = item.title,
+                    tint = if (selected)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp)
+                )
+                AnimatedVisibility(
+                    visible = selected,
+                    enter = fadeIn(tween(200)),
+                    exit = fadeOut(tween(150))
+                ) {
+                    Text(
+                        text = item.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        maxLines = 1,
+                        softWrap = false
+                    )
                 }
             }
         }
-    } 
-} 
+    }
+}
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -272,8 +294,14 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                         isError = errorType != 0,
                         supportingText = {
                             when (errorType) {
-                                1 -> Text(stringResource(R.string.dialog_key_input_no_empty), color = MaterialTheme.colorScheme.error)
-                                2 -> Text(stringResource(R.string.dialog_key_input_invalid), color = MaterialTheme.colorScheme.error)
+                                1 -> Text(
+                                    stringResource(R.string.dialog_key_input_no_empty),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                                2 -> Text(
+                                    stringResource(R.string.dialog_key_input_invalid),
+                                    color = MaterialTheme.colorScheme.error
+                                )
                             }
                         }
                     )
