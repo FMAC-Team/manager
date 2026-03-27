@@ -4,17 +4,6 @@ plugins {
     alias(libs.plugins.jlleitschuh.ktlint)
 }
 
-ktlint {
-    version.set("1.8.0")
-    debug.set(true)
-    verbose.set(true)
-    android.set(true)
-    outputToConsole.set(true)
-    coloredOutput.set(true)
-    ignoreFailures.set(true)
-    enableExperimentalRules.set(true)
-}
-
 android {
     namespace = "me.nekosu.aqnya"
     compileSdk {
