@@ -8,13 +8,15 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Android
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -22,10 +24,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
@@ -54,7 +59,7 @@ class RootDbHelper(context: Context) : SQLiteOpenHelper(context, "root_manager.d
         }
         return set
     }
-    
+
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         db.execSQL("DROP TABLE IF EXISTS root_apps")
         onCreate(db)
@@ -87,7 +92,6 @@ enum class FilterMode(@param:StringRes val labelRes: Int) {
 class AppViewModel(private val context: Context) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
-    
     private val dbHelper = RootDbHelper(context)
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
@@ -119,22 +123,18 @@ class AppViewModel(private val context: Context) : ViewModel() {
             }
 
             val pm = context.packageManager
-            val installed =
-                pm
-                    .getInstalledPackages(PackageManager.GET_META_DATA)
-                    .mapNotNull { pkg ->
-                        pkg.applicationInfo?.let { ai ->
-                            AppInfo(
-                                name = ai.loadLabel(pm).toString(),
-                                packageName = pkg.packageName,
-                                uid = ai.uid,
-                                isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                                isLaunchable = pm.getLaunchIntentForPackage(
-                                    pkg.packageName
-                                ) != null
-                            )
-                        }
-                    }.sortedBy { it.name.lowercase() }
+            val installed = pm.getInstalledPackages(PackageManager.GET_META_DATA)
+                .mapNotNull { pkg ->
+                    pkg.applicationInfo?.let { ai ->
+                        AppInfo(
+                            name = ai.loadLabel(pm).toString(),
+                            packageName = pkg.packageName,
+                            uid = ai.uid,
+                            isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                            isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null
+                        )
+                    }
+                }.sortedBy { it.name.lowercase() }
 
             allApps = installed
             isLoaded = true
@@ -151,13 +151,7 @@ class AppViewModel(private val context: Context) : ViewModel() {
 
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, allow)
-            if (allow) {
-                try {
-                //TODO
-                } catch (e: UnsatisfiedLinkError) {
-                    e.printStackTrace()
-                }
-            }
+            // TODO
         }
     }
 }
@@ -165,30 +159,6 @@ class AppViewModel(private val context: Context) : ViewModel() {
 class AppViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(context) as T
-}
-
-@Composable
-fun AppIcon(packageName: String) {
-    val context = LocalContext.current
-    val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value =
-            withContext(Dispatchers.IO) {
-                try {
-                    context.packageManager
-                        .getApplicationIcon(packageName)
-                        .toBitmap()
-                        .asImageBitmap()
-                } catch (e: Exception) {
-                    null
-                }
-            }
-    }
-
-    if (iconBitmap != null) {
-        Image(bitmap = iconBitmap!!, contentDescription = null, modifier = Modifier.size(40.dp))
-    } else {
-        Icon(Icons.Default.Android, contentDescription = null, modifier = Modifier.size(40.dp))
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -208,22 +178,19 @@ fun HistoryScreen() {
     }
 
     LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
-        apps =
-            viewModel.allApps.filter { app ->
-                val passFilter =
-                    when (filterMode) {
-                        FilterMode.ALL -> true
-                        FilterMode.LAUNCHABLE -> app.isLaunchable
-                        FilterMode.SYSTEM -> app.isSystem
-                        FilterMode.USER -> !app.isSystem
-                    }
-                val q = searchQuery.trim().lowercase()
-                val passSearch =
-                    q.isEmpty() ||
-                        app.name.lowercase().contains(q) ||
-                        app.packageName.lowercase().contains(q)
-                passFilter && passSearch
+        apps = viewModel.allApps.filter { app ->
+            val passFilter = when (filterMode) {
+                FilterMode.ALL -> true
+                FilterMode.LAUNCHABLE -> app.isLaunchable
+                FilterMode.SYSTEM -> app.isSystem
+                FilterMode.USER -> !app.isSystem
             }
+            val q = searchQuery.trim().lowercase()
+            val passSearch = q.isEmpty() || 
+                             app.name.lowercase().contains(q) || 
+                             app.packageName.lowercase().contains(q)
+            passFilter && passSearch
+        }
     }
 
     Scaffold(
@@ -231,15 +198,26 @@ fun HistoryScreen() {
             TopAppBar(
                 title = {
                     if (isSearching) {
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { searchQuery = it },
-                            placeholder = { Text(stringResource(R.string.search_hint)) },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
+                        TextField(
+    value = searchQuery,
+    onValueChange = { searchQuery = it },
+    placeholder = { Text("搜索应用...") },
+    modifier = Modifier.fillMaxWidth(),
+    singleLine = true,
+    colors = TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent
+    )
+)
                     } else {
-                        Text(stringResource(filterMode.labelRes))
+                        Text(
+                            text = stringResource(filterMode.labelRes),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 },
                 navigationIcon = {
@@ -258,9 +236,7 @@ fun HistoryScreen() {
                             Icon(Icons.Default.Search, contentDescription = null)
                         }
                         IconButton(onClick = {
-                            scope.launch {
-                                viewModel.loadApps(forceRefresh = true)
-                            }
+                            scope.launch { viewModel.loadApps(forceRefresh = true) }
                         }) {
                             Icon(Icons.Default.Refresh, contentDescription = null)
                         }
@@ -269,11 +245,12 @@ fun HistoryScreen() {
                         IconButton(onClick = { menuExpanded = true }) {
                             Icon(Icons.Default.FilterList, contentDescription = null)
                         }
-                        DropdownMenu(expanded = menuExpanded, onDismissRequest = {
-                            menuExpanded =
-                                false
-                        }) {
-                            FilterMode.values().forEach { mode ->
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            FilterMode.entries.forEach { mode ->
                                 DropdownMenuItem(
                                     text = { Text(stringResource(mode.labelRes)) },
                                     onClick = {
@@ -284,51 +261,46 @@ fun HistoryScreen() {
                             }
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             )
         }
     ) { innerPadding ->
         Box(
-            modifier = Modifier.fillMaxSize().padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             if (!viewModel.isLoaded) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(strokeWidth = 3.dp)
             } else if (apps.isEmpty()) {
-                Text(stringResource(R.string.no_app_found))
+                Text(
+                    text = "未找到相关应用",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(
-                        top = 8.dp,
-                        bottom = 96.dp + androidx.compose.foundation.layout.WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                    )
+        top = 12.dp,
+        bottom = 80.dp, 
+        start = 0.dp,
+        end = 0.dp
+    )
                 ) {
                     items(apps, key = { it.packageName }) { app ->
-                        val isAllowed = viewModel.allowedApps.contains(app.packageName)
-
-                        ListItem(
-                            headlineContent = { Text(app.name) },
-                            supportingContent = {
-                                Column {
-                                    Text(app.packageName)
-                                    Text("UID: ${app.uid}")
-                                }
-                            },
-                            leadingContent = { AppIcon(app.packageName) },
-                            trailingContent = {
-                                Switch(
-                                    checked = isAllowed,
-                                    onCheckedChange = { checked ->
-                                        viewModel.toggleRootPermission(app, checked)
-                                    }
-                                )
-                            },
-                            modifier = Modifier.clickable { 
-                                // viewModel.toggleRootPermission(app, !isAllowed)
+                        AppInfoItem(
+                            app = app,
+                            isAllowed = viewModel.allowedApps.contains(app.packageName),
+                            onToggle = { checked ->
+                                viewModel.toggleRootPermission(app, checked)
                             }
                         )
-                        HorizontalDivider()
                     }
                 }
             }
@@ -336,8 +308,110 @@ fun HistoryScreen() {
     }
 }
 
+@Composable
+fun AppInfoItem(
+    app: AppInfo,
+    isAllowed: Boolean,
+    onToggle: (Boolean) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+            ) {
+                AppIcon(packageName = app.packageName, modifier = Modifier.size(30.dp))
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = app.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+                Text(
+                    text = "${app.packageName} • UID: ${app.uid}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    maxLines = 1
+                )
+            }
+            Switch(
+                checked = isAllowed,
+                onCheckedChange = onToggle,
+                thumbContent = if (isAllowed) {
+                    {
+                        Icon(
+                            imageVector = Icons.Filled.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(SwitchDefaults.IconSize)
+                        )
+                    }
+                } else null
+            )
+        }
+    }
+}
+
+@Composable
+fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
+        value = withContext(Dispatchers.IO) {
+            try {
+                context.packageManager
+                    .getApplicationIcon(packageName)
+                    .toBitmap()
+                    .asImageBitmap()
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    if (iconBitmap != null) {
+        Image(
+            bitmap = iconBitmap!!,
+            contentDescription = null,
+            modifier = modifier
+        )
+    } else {
+        Icon(
+            imageVector = Icons.Default.Android,
+            contentDescription = null,
+            modifier = modifier,
+            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun PreviewHistoryScreen() {
-    HistoryScreen()
+    MaterialTheme {
+        HistoryScreen()
+    }
 }
