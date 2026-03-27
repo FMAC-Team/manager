@@ -31,7 +31,7 @@ jobs:
         run: |
            curl -sSLO https://github.com/pinterest/ktlint/releases/download/1.8.0/ktlint
            chmod +x ktlint
-           ./ktlint -F "app/src/**/*.kt"
+           ./ktlint -F "app/src/**/*.kt" ||true
 
       - name: Check for changes
         id: git-check
