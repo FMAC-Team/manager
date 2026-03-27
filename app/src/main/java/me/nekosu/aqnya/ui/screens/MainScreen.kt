@@ -1,19 +1,28 @@
 package me.nekosu.aqnya.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,20 +31,21 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -52,56 +62,96 @@ import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
-import androidx.compose.runtime.LaunchedEffect
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    val topCornerRadius = 24.dp
-
-    NavigationBar(
+    Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius)),
-        windowInsets = WindowInsets.navigationBars
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp)
+            .padding(bottom = 24.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars),
+        contentAlignment = Alignment.Center
     ) {
-        BottomNavItem.Companion.items.forEach { item ->
-            val selected = currentRoute == item.route
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
-                        contentDescription = item.title
+        Surface(
+            shape = RoundedCornerShape(50),
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            tonalElevation = 8.dp,
+            shadowElevation = 16.dp,
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BottomNavItem.Companion.items.forEach { item ->
+                    val selected = currentRoute == item.route
+                    val containerColor by animateColorAsState(
+                        targetValue = if (selected)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            Color.Transparent,
+                        animationSpec = tween(300),
+                        label = "navItemBg"
                     )
-                },
-                label = {
-                    if (selected) {
-                        Text(text = item.title)
-                    }
-                },
-                selected = selected,
-                onClick = {
-                    navController.navigate(item.route) {
-                        launchSingleTop = true
-                        restoreState = true
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+
+                    Surface(
+                        onClick = {
+                            navController.navigate(item.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(50),
+                        color = containerColor,
+                        modifier = Modifier.height(48.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = if (selected) 16.dp else 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                                contentDescription = item.title,
+                                tint = if (selected)
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            AnimatedVisibility(
+                                visible = selected,
+                                enter = fadeIn(tween(200)) + expandHorizontally(tween(300)),
+                                exit = fadeOut(tween(150)) + shrinkHorizontally(tween(250))
+                            ) {
+                                Text(
+                                    text = item.title,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    maxLines = 1
+                                )
+                            }
                         }
                     }
                 }
-            )
+            }
         }
-    }
-}
+    } 
+} 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
-
-var showKeyDialog by remember { mutableStateOf(false) }
+    var showKeyDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (!KeyUtils.checkKeyExists(context)) {
@@ -109,62 +159,71 @@ var showKeyDialog by remember { mutableStateOf(false) }
         }
     }
 
-    KeyInputDialog(
-        show = showKeyDialog,
-        onDismiss = { showKeyDialog = false }
-    )
-
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController) }
+        bottomBar = {}
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = BottomNavItem.Home.route,
-            modifier = Modifier.padding(innerPadding)
-        ) {
-            val commonTween = tween<Float>(300)
-            
-            composable(
-                route = BottomNavItem.Home.route,
-                enterTransition = { fadeIn(commonTween) },
-                exitTransition = { fadeOut(commonTween) },
-                popEnterTransition = { fadeIn(commonTween) },
-                popExitTransition = { fadeOut(commonTween) }
-            ) { HomeScreen() }
+        Box(modifier = Modifier.fillMaxSize()) {
+            NavHost(
+                navController = navController,
+                startDestination = BottomNavItem.Home.route,
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(bottom = 96.dp)
+            ) {
+                val commonTween = tween<Float>(300)
 
-            composable(
-                route = BottomNavItem.History.route,
-                enterTransition = { fadeIn(commonTween) },
-                exitTransition = { fadeOut(commonTween) },
-                popEnterTransition = { fadeIn(commonTween) },
-                popExitTransition = { fadeOut(commonTween) }
-            ) { HistoryScreen() }
+                composable(
+                    route = BottomNavItem.Home.route,
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) },
+                    popEnterTransition = { fadeIn(commonTween) },
+                    popExitTransition = { fadeOut(commonTween) }
+                ) { HomeScreen() }
 
-            composable(
-                route = BottomNavItem.Settings.route,
-                enterTransition = { fadeIn(commonTween) },
-                exitTransition = { fadeOut(commonTween) },
-                popEnterTransition = { fadeIn(commonTween) },
-                popExitTransition = { fadeOut(commonTween) }
-            ) { SettingsScreen(navController) }
+                composable(
+                    route = BottomNavItem.History.route,
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) },
+                    popEnterTransition = { fadeIn(commonTween) },
+                    popExitTransition = { fadeOut(commonTween) }
+                ) { HistoryScreen() }
 
-            composable(
-                route = "about",
-                enterTransition = { fadeIn(commonTween) },
-                exitTransition = { fadeOut(commonTween) }
-            ) { AboutScreen(navController) }
+                composable(
+                    route = BottomNavItem.Settings.route,
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) },
+                    popEnterTransition = { fadeIn(commonTween) },
+                    popExitTransition = { fadeOut(commonTween) }
+                ) { SettingsScreen(navController) }
 
-            composable(
-                route = "open_source",
-                enterTransition = { fadeIn(commonTween) },
-                exitTransition = { fadeOut(commonTween) }
-            ) { OpenSourceScreen(navController) }
+                composable(
+                    route = "about",
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) }
+                ) { AboutScreen(navController) }
+
+                composable(
+                    route = "open_source",
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) }
+                ) { OpenSourceScreen(navController) }
+            }
+
+            KeyInputDialog(
+                show = showKeyDialog,
+                onDismiss = { showKeyDialog = false }
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            ) {
+                BottomNavigationBar(navController)
+            }
+
+            CheckUpdate(owner = "aqnya", repo = "nekosu")
         }
-
-        val owner = "aqnya"
-        val repo = "nekosu"
-        CheckUpdate(owner = owner, repo = repo)
-        
     }
 }
 
@@ -196,7 +255,6 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                 ) {
                     Text(stringResource(R.string.dialog_key_please_input))
                     Spacer(modifier = Modifier.height(8.dp))
-
                     OutlinedTextField(
                         value = inputText,
                         onValueChange = {
@@ -231,7 +289,7 @@ fun KeyInputDialog(show: Boolean, onDismiss: () -> Unit) {
                             else -> 0
                         }
                         if (errorType == 0) {
-                            KeyUtils.saveKey(context, trimmedKey)
+                            KeyUtils.saveKey(context, trimmedKey.toByteArray(Charsets.UTF_8))
                             onDismiss()
                         }
                     }
