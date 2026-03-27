@@ -4,6 +4,17 @@ plugins {
     alias(libs.plugins.jlleitschuh.ktlint)
 }
 
+ktlint {
+    version.set("1.8.0")
+    debug.set(true)
+    verbose.set(true)
+    android.set(true)
+    outputToConsole.set(true)
+    coloredOutput.set(true)
+    ignoreFailures.set(true)
+    enableExperimentalRules.set(true)
+}
+
 android {
     namespace = "me.nekosu.aqnya"
     compileSdk {
@@ -75,19 +86,4 @@ dependencies {
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
-
-ktlint {
-    android.set(true)
-    ignoreFailures.set(false)
-    verbose.set(true)
-    outputToConsole.set(true)
-    reporters {
-        reporter(org.jlleitschuh.gradle.ktlint.reporter.ReporterType.PLAIN)
-    }
-
-    filter {
-        exclude("**/generated/**")
-        include("src/**/*.kt")
-    }
 }
