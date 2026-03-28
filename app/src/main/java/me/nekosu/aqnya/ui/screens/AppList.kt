@@ -476,7 +476,7 @@ fun AppInfoItem(
             Switch(
                 checked = isAllowed,
                 onCheckedChange = {
-                    haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                     onToggle(it)
                 },
                 thumbContent =
