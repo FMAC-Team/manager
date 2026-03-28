@@ -38,7 +38,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,8 +54,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -187,19 +187,23 @@ class AppViewModel(
         }
     }
 
-fun toggleRootPermission(
-    app: AppInfo,
-    allow: Boolean,
-) {
-    allowedApps = if (allow) allowedApps + app.packageName
-                  else allowedApps - app.packageName
+    fun toggleRootPermission(
+        app: AppInfo,
+        allow: Boolean,
+    ) {
+        allowedApps =
+            if (allow) {
+                allowedApps + app.packageName
+            } else {
+                allowedApps - app.packageName
+            }
 
-    viewModelScope.launch(Dispatchers.IO) {
-        dbHelper.setAllowed(app.packageName, allow)
-        val nc = ncore()
-        if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
+        viewModelScope.launch(Dispatchers.IO) {
+            dbHelper.setAllowed(app.packageName, allow)
+            val nc = ncore()
+            if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
+        }
     }
-}
 }
 
 class AppViewModelFactory(
@@ -225,29 +229,31 @@ fun HistoryScreen() {
         viewModel.loadApps()
     }
 
-val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
+    val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
 
-LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
-    sortSnapshotAllowed.value = viewModel.allowedApps
-    apps = viewModel.allApps
-        .filter { app ->
-            val passFilter = when (filterMode) {
-                FilterMode.ALL -> true
-                FilterMode.LAUNCHABLE -> app.isLaunchable
-                FilterMode.SYSTEM -> app.isSystem
-                FilterMode.USER -> !app.isSystem
-            }
-            val q = searchQuery.trim().lowercase()
-            val passSearch = q.isEmpty() ||
-                app.name.lowercase().contains(q) ||
-                app.packageName.lowercase().contains(q)
-            passFilter && passSearch
-        }
-        .sortedWith(
-            compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
-                .thenBy { it.name.lowercase() }
-        )
-}
+    LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
+        sortSnapshotAllowed.value = viewModel.allowedApps
+        apps =
+            viewModel.allApps
+                .filter { app ->
+                    val passFilter =
+                        when (filterMode) {
+                            FilterMode.ALL -> true
+                            FilterMode.LAUNCHABLE -> app.isLaunchable
+                            FilterMode.SYSTEM -> app.isSystem
+                            FilterMode.USER -> !app.isSystem
+                        }
+                    val q = searchQuery.trim().lowercase()
+                    val passSearch =
+                        q.isEmpty() ||
+                            app.name.lowercase().contains(q) ||
+                            app.packageName.lowercase().contains(q)
+                    passFilter && passSearch
+                }.sortedWith(
+                    compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
+                        .thenBy { it.name.lowercase() },
+                )
+    }
 
     Scaffold(
         topBar = {
@@ -260,13 +266,14 @@ LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
                             placeholder = { Text("搜索应用...") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors = TextFieldDefaults.colors(
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                                disabledContainerColor = Color.Transparent,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                            ),
+                            colors =
+                                TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    disabledContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                ),
                         )
                     } else {
                         Text(
@@ -318,17 +325,19 @@ LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
                         }
                     }
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
     ) { innerPadding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (!viewModel.isLoaded) {
@@ -342,10 +351,11 @@ LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(
-                        top = 12.dp,
-                        bottom = 80.dp,
-                    ),
+                    contentPadding =
+                        PaddingValues(
+                            top = 12.dp,
+                            bottom = 80.dp,
+                        ),
                 ) {
                     items(apps, key = { it.packageName }) { app ->
                         AppInfoItem(
@@ -374,24 +384,27 @@ fun AppInfoItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                    .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .background(
-                        MaterialTheme.colorScheme.primary.copy(0.08f),
-                        RoundedCornerShape(14.dp)
-                    ),
+                modifier =
+                    Modifier
+                        .size(48.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(0.08f),
+                            RoundedCornerShape(14.dp),
+                        ),
                 contentAlignment = Alignment.Center,
             ) {
                 AppIcon(app.packageName, Modifier.size(30.dp))
@@ -400,19 +413,20 @@ fun AppInfoItem(
             Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 24.dp)
-                    .let { modifier ->
-                        if (isOverflown || expanded) {
-                            modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { expanded = !expanded }
-                        } else {
-                            modifier
-                        }
-                    },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(end = 24.dp)
+                        .let { modifier ->
+                            if (isOverflown || expanded) {
+                                modifier.clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) { expanded = !expanded }
+                            } else {
+                                modifier
+                            }
+                        },
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -428,14 +442,18 @@ fun AppInfoItem(
                     transitionSpec = {
                         val fastSpec = tween<IntSize>(durationMillis = 250)
                         val fastFadeSpec = tween<Float>(durationMillis = 200)
-                        (fadeIn(fastFadeSpec) + expandHorizontally(
-                            animationSpec = fastSpec,
-                            expandFrom = Alignment.Start
-                        )).togetherWith(
-                            fadeOut(fastFadeSpec) + shrinkHorizontally(
-                                animationSpec = fastSpec,
-                                shrinkTowards = Alignment.Start
-                            )
+                        (
+                            fadeIn(fastFadeSpec) +
+                                expandHorizontally(
+                                    animationSpec = fastSpec,
+                                    expandFrom = Alignment.Start,
+                                )
+                        ).togetherWith(
+                            fadeOut(fastFadeSpec) +
+                                shrinkHorizontally(
+                                    animationSpec = fastSpec,
+                                    shrinkTowards = Alignment.Start,
+                                ),
                         )
                     },
                     label = "textReveal",
@@ -453,19 +471,20 @@ fun AppInfoItem(
                     )
                 }
             }
-val haptic = LocalHapticFeedback.current
+            val haptic = LocalHapticFeedback.current
 
             Switch(
                 checked = isAllowed,
-onCheckedChange = {
-        haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
-        onToggle(it)
-    },
-                thumbContent = if (isAllowed) {
-                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                } else {
-                    null
+                onCheckedChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                    onToggle(it)
                 },
+                thumbContent =
+                    if (isAllowed) {
+                        { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                    } else {
+                        null
+                    },
             )
         }
     }
@@ -478,16 +497,17 @@ fun AppIcon(
 ) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                context.packageManager
-                    .getApplicationIcon(packageName)
-                    .toBitmap()
-                    .asImageBitmap()
-            } catch (e: Exception) {
-                null
+        value =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.packageManager
+                        .getApplicationIcon(packageName)
+                        .toBitmap()
+                        .asImageBitmap()
+                } catch (e: Exception) {
+                    null
+                }
             }
-        }
     }
 
     if (iconBitmap != null) {
