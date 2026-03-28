@@ -75,7 +75,12 @@ fun HomeScreen() {
         installStatus =
             withContext(Dispatchers.IO) {
                 val result = ncore().ctl(1)
-                if (result == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED
+           if (result == 0) {
+            ncore().ctl(3) 
+            InstallStatus.INSTALLED 
+        } else {
+            InstallStatus.NOT_INSTALLED
+        }
             }
     }
 

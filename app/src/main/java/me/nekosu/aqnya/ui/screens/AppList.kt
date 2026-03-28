@@ -54,6 +54,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
+import me.nekosu.aqnya.ncore
 
 class RootDbHelper(
     context: Context,
@@ -128,10 +129,23 @@ class AppViewModel(
         private set
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            allowedApps = dbHelper.getAllowedPackages()
+    viewModelScope.launch(Dispatchers.IO) {
+        val allowed = dbHelper.getAllowedPackages()
+        allowedApps = allowed
+        val nc = ncore()
+        val pm = context.packageManager
+        for (pkg in allowed) {
+            try {
+                val uid = pm.getApplicationInfo(pkg, 0).uid
+                if (nc.hasuid(uid) == 0) {
+                    nc.adduid(uid)
+                }
+            } catch (_: Exception) {
+                // Skip
+            }
         }
     }
+}
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -168,22 +182,20 @@ class AppViewModel(
         }
     }
 
-    fun toggleRootPermission(
-        app: AppInfo,
-        allow: Boolean,
-    ) {
-        allowedApps =
-            if (allow) {
-                allowedApps + app.packageName
-            } else {
-                allowedApps - app.packageName
-            }
+fun toggleRootPermission(app: AppInfo, allow: Boolean) {
+    allowedApps = if (allow) allowedApps + app.packageName
+                  else allowedApps - app.packageName
 
-        viewModelScope.launch(Dispatchers.IO) {
-            dbHelper.setAllowed(app.packageName, allow)
-            // TODO
+    viewModelScope.launch(Dispatchers.IO) {
+        dbHelper.setAllowed(app.packageName, allow)
+        val nc = ncore()
+        if (allow) {
+            nc.adduid(app.uid)
+        } else {
+            nc.deluid(app.uid)
         }
     }
+}
 }
 
 class AppViewModelFactory(
