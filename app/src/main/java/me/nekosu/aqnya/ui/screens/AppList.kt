@@ -52,6 +52,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -185,35 +187,19 @@ class AppViewModel(
         }
     }
 
-    fun toggleRootPermission(
-        app: AppInfo,
-        allow: Boolean,
-    ) {
-        allowedApps = if (allow) allowedApps + app.packageName
-                      else allowedApps - app.packageName
+fun toggleRootPermission(
+    app: AppInfo,
+    allow: Boolean,
+) {
+    allowedApps = if (allow) allowedApps + app.packageName
+                  else allowedApps - app.packageName
 
-        if (allow) {
-            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-                vm.defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(50)
-            }
-        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            dbHelper.setAllowed(app.packageName, allow)
-            val nc = ncore()
-            if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
-        }
+    viewModelScope.launch(Dispatchers.IO) {
+        dbHelper.setAllowed(app.packageName, allow)
+        val nc = ncore()
+        if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
     }
+}
 }
 
 class AppViewModelFactory(
@@ -239,26 +225,29 @@ fun HistoryScreen() {
         viewModel.loadApps()
     }
 
-    LaunchedEffect(viewModel.allApps, filterMode, searchQuery, viewModel.allowedApps) {
-        apps = viewModel.allApps
-            .filter { app ->
-                val passFilter = when (filterMode) {
-                    FilterMode.ALL -> true
-                    FilterMode.LAUNCHABLE -> app.isLaunchable
-                    FilterMode.SYSTEM -> app.isSystem
-                    FilterMode.USER -> !app.isSystem
-                }
-                val q = searchQuery.trim().lowercase()
-                val passSearch = q.isEmpty() ||
-                    app.name.lowercase().contains(q) ||
-                    app.packageName.lowercase().contains(q)
-                passFilter && passSearch
+val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
+
+LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
+    sortSnapshotAllowed.value = viewModel.allowedApps
+    apps = viewModel.allApps
+        .filter { app ->
+            val passFilter = when (filterMode) {
+                FilterMode.ALL -> true
+                FilterMode.LAUNCHABLE -> app.isLaunchable
+                FilterMode.SYSTEM -> app.isSystem
+                FilterMode.USER -> !app.isSystem
             }
-            .sortedWith(
-                compareByDescending<AppInfo> { viewModel.allowedApps.contains(it.packageName) }
-                    .thenBy { it.name.lowercase() }
-            )
-    }
+            val q = searchQuery.trim().lowercase()
+            val passSearch = q.isEmpty() ||
+                app.name.lowercase().contains(q) ||
+                app.packageName.lowercase().contains(q)
+            passFilter && passSearch
+        }
+        .sortedWith(
+            compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
+                .thenBy { it.name.lowercase() }
+        )
+}
 
     Scaffold(
         topBar = {
@@ -464,10 +453,14 @@ fun AppInfoItem(
                     )
                 }
             }
+val haptic = LocalHapticFeedback.current
 
             Switch(
                 checked = isAllowed,
-                onCheckedChange = onToggle,
+onCheckedChange = {
+        haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+        onToggle(it)
+    },
                 thumbContent = if (isAllowed) {
                     { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
                 } else {
