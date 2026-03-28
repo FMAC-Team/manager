@@ -6,6 +6,10 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.animateContentSize
@@ -31,7 +35,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -55,10 +58,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 
 class RootDbHelper(
     context: Context,
@@ -133,23 +132,23 @@ class AppViewModel(
         private set
 
     init {
-    viewModelScope.launch(Dispatchers.IO) {
-        val allowed = dbHelper.getAllowedPackages()
-        allowedApps = allowed
-        val nc = ncore()
-        val pm = context.packageManager
-        for (pkg in allowed) {
-            try {
-                val uid = pm.getApplicationInfo(pkg, 0).uid
-                if (nc.hasuid(uid) == 0) {
-                    nc.adduid(uid)
+        viewModelScope.launch(Dispatchers.IO) {
+            val allowed = dbHelper.getAllowedPackages()
+            allowedApps = allowed
+            val nc = ncore()
+            val pm = context.packageManager
+            for (pkg in allowed) {
+                try {
+                    val uid = pm.getApplicationInfo(pkg, 0).uid
+                    if (nc.hasuid(uid) == 0) {
+                        nc.adduid(uid)
+                    }
+                } catch (_: Exception) {
+                    // Skip
                 }
-            } catch (_: Exception) {
-                // Skip
             }
         }
     }
-}
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -186,30 +185,34 @@ class AppViewModel(
         }
     }
 
-fun toggleRootPermission(app: AppInfo, allow: Boolean) {
-    allowedApps = if (allow) allowedApps + app.packageName
-                  else allowedApps - app.packageName
+    fun toggleRootPermission(
+        app: AppInfo,
+        allow: Boolean,
+    ) {
+        allowedApps = if (allow) allowedApps + app.packageName
+                      else allowedApps - app.packageName
 
-    if (allow) {
-        val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
-            vm.defaultVibrator
-        } else {
-            @Suppress("DEPRECATION")
-            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (allow) {
+            val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val vm = context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
+                vm.defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(50)
+            }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(50)
-        }
-    }
 
-    viewModelScope.launch(Dispatchers.IO) {
-        dbHelper.setAllowed(app.packageName, allow)
-        val nc = ncore()
-        if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
+        viewModelScope.launch(Dispatchers.IO) {
+            dbHelper.setAllowed(app.packageName, allow)
+            val nc = ncore()
+            if (allow) nc.adduid(app.uid) else nc.deluid(app.uid)
+        }
     }
 }
 
@@ -236,23 +239,25 @@ fun HistoryScreen() {
         viewModel.loadApps()
     }
 
-    LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
-        apps =
-            viewModel.allApps.filter { app ->
-                val passFilter =
-                    when (filterMode) {
-                        FilterMode.ALL -> true
-                        FilterMode.LAUNCHABLE -> app.isLaunchable
-                        FilterMode.SYSTEM -> app.isSystem
-                        FilterMode.USER -> !app.isSystem
-                    }
+    LaunchedEffect(viewModel.allApps, filterMode, searchQuery, viewModel.allowedApps) {
+        apps = viewModel.allApps
+            .filter { app ->
+                val passFilter = when (filterMode) {
+                    FilterMode.ALL -> true
+                    FilterMode.LAUNCHABLE -> app.isLaunchable
+                    FilterMode.SYSTEM -> app.isSystem
+                    FilterMode.USER -> !app.isSystem
+                }
                 val q = searchQuery.trim().lowercase()
-                val passSearch =
-                    q.isEmpty() ||
-                        app.name.lowercase().contains(q) ||
-                        app.packageName.lowercase().contains(q)
+                val passSearch = q.isEmpty() ||
+                    app.name.lowercase().contains(q) ||
+                    app.packageName.lowercase().contains(q)
                 passFilter && passSearch
             }
+            .sortedWith(
+                compareByDescending<AppInfo> { viewModel.allowedApps.contains(it.packageName) }
+                    .thenBy { it.name.lowercase() }
+            )
     }
 
     Scaffold(
@@ -266,14 +271,13 @@ fun HistoryScreen() {
                             placeholder = { Text("搜索应用...") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors =
-                                TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
                         )
                     } else {
                         Text(
@@ -325,19 +329,17 @@ fun HistoryScreen() {
                         }
                     }
                 },
-                colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         },
     ) { innerPadding ->
         Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (!viewModel.isLoaded) {
@@ -351,13 +353,10 @@ fun HistoryScreen() {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding =
-                        PaddingValues(
-                            top = 12.dp,
-                            bottom = 80.dp,
-                            start = 0.dp,
-                            end = 0.dp,
-                        ),
+                    contentPadding = PaddingValues(
+                        top = 12.dp,
+                        bottom = 80.dp,
+                    ),
                 ) {
                     items(apps, key = { it.packageName }) { app ->
                         AppInfoItem(
@@ -386,21 +385,24 @@ fun AppInfoItem(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+        ),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                    .padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.primary.copy(0.08f), RoundedCornerShape(14.dp)),
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(0.08f),
+                        RoundedCornerShape(14.dp)
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 AppIcon(app.packageName, Modifier.size(30.dp))
@@ -409,20 +411,19 @@ fun AppInfoItem(
             Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(end = 24.dp)
-                        .let { modifier ->
-                            if (isOverflown || expanded) {
-                                modifier.clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { expanded = !expanded }
-                            } else {
-                                modifier
-                            }
-                        },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 24.dp)
+                    .let { modifier ->
+                        if (isOverflown || expanded) {
+                            modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { expanded = !expanded }
+                        } else {
+                            modifier
+                        }
+                    },
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -438,20 +439,21 @@ fun AppInfoItem(
                     transitionSpec = {
                         val fastSpec = tween<IntSize>(durationMillis = 250)
                         val fastFadeSpec = tween<Float>(durationMillis = 200)
-
-                        (fadeIn(fastFadeSpec) + expandHorizontally(animationSpec = fastSpec, expandFrom = Alignment.Start))
-                            .togetherWith(
-                                fadeOut(fastFadeSpec) + shrinkHorizontally(animationSpec = fastSpec, shrinkTowards = Alignment.Start),
+                        (fadeIn(fastFadeSpec) + expandHorizontally(
+                            animationSpec = fastSpec,
+                            expandFrom = Alignment.Start
+                        )).togetherWith(
+                            fadeOut(fastFadeSpec) + shrinkHorizontally(
+                                animationSpec = fastSpec,
+                                shrinkTowards = Alignment.Start
                             )
+                        )
                     },
                     label = "textReveal",
                 ) { isExpanded ->
                     Text(
                         text = "${app.packageName} • UID: ${app.uid}",
-                        style =
-                            MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                            ),
+                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis,
                         onTextLayout = { textLayoutResult ->
@@ -466,12 +468,11 @@ fun AppInfoItem(
             Switch(
                 checked = isAllowed,
                 onCheckedChange = onToggle,
-                thumbContent =
-                    if (isAllowed) {
-                        { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                    } else {
-                        null
-                    },
+                thumbContent = if (isAllowed) {
+                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                } else {
+                    null
+                },
             )
         }
     }
@@ -484,17 +485,16 @@ fun AppIcon(
 ) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value =
-            withContext(Dispatchers.IO) {
-                try {
-                    context.packageManager
-                        .getApplicationIcon(packageName)
-                        .toBitmap()
-                        .asImageBitmap()
-                } catch (e: Exception) {
-                    null
-                }
+        value = withContext(Dispatchers.IO) {
+            try {
+                context.packageManager
+                    .getApplicationIcon(packageName)
+                    .toBitmap()
+                    .asImageBitmap()
+            } catch (e: Exception) {
+                null
             }
+        }
     }
 
     if (iconBitmap != null) {
