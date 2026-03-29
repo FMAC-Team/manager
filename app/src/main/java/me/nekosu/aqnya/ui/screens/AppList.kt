@@ -98,13 +98,13 @@ class RootDbHelper(
             }
         writableDatabase.insertWithOnConflict("root_apps", null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
-    fun getAllowedCount(): Int {
-    return readableDatabase
-        .rawQuery("SELECT COUNT(*) FROM root_apps WHERE allowed = 1", null)
-        .use { cursor ->
-            if (cursor.moveToFirst()) cursor.getInt(0) else 0
-        }
-}
+
+    fun getAllowedCount(): Int =
+        readableDatabase
+            .rawQuery("SELECT COUNT(*) FROM root_apps WHERE allowed = 1", null)
+            .use { cursor ->
+                if (cursor.moveToFirst()) cursor.getInt(0) else 0
+            }
 }
 
 data class AppInfo(

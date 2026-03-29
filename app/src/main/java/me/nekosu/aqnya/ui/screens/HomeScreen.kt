@@ -92,8 +92,8 @@ fun HomeScreen() {
     LaunchedEffect(installStatus) {
         if (installStatus == InstallStatus.INSTALLED) {
             withContext(Dispatchers.IO) {
-            val db = RootDbHelper(context)
-            suCount = db.getAllowedCount()
+                val db = RootDbHelper(context)
+                suCount = db.getAllowedCount()
                 ruleCount = 1
                 // TODO
             }
@@ -175,24 +175,27 @@ fun StatCard(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
-                        shape = RoundedCornerShape(12.dp),
-                    ),
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                            shape = RoundedCornerShape(12.dp),
+                        ),
             ) {
                 Icon(
                     imageVector = icon,
