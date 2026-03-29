@@ -7,6 +7,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomNavItem(
@@ -28,6 +30,13 @@ sealed class BottomNavItem(
         selectedIcon = Icons.AutoMirrored.Filled.List,
         unselectedIcon = Icons.AutoMirrored.Outlined.List,
     )
+    
+    object FmacRules : BottomNavItem(
+        route = "rules",
+        title = "规则",
+        selectedIcon = Icons.Filled.Security,
+        unselectedIcon = Icons.Outlined.Security,
+    )
 
     object Settings : BottomNavItem(
         route = "settings",
@@ -37,6 +46,6 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        val items by lazy { listOf(Home, History, Settings) }
+        val items by lazy { listOf(Home, History,FmacRules, Settings) }
     }
 }
