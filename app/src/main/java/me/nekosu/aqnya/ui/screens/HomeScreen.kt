@@ -60,6 +60,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.getAppVersion
+import me.nekosu.aqnya.util.RootDbHelper
+import me.nekosu.aqnya.util.RuleDbHelper
 
 enum class InstallStatus {
     CHECKING,
