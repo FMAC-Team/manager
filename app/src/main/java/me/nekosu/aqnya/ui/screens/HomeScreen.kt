@@ -92,10 +92,10 @@ fun HomeScreen() {
     LaunchedEffect(installStatus) {
         if (installStatus == InstallStatus.INSTALLED) {
             withContext(Dispatchers.IO) {
-                val db = RootDbHelper(context)
-                suCount = db.getAllowedCount()
-                ruleCount = 1
-                // TODO
+          val rootDb = RootDbHelper(context)
+            val ruleDb = RuleDbHelper(context)
+            suCount = rootDb.getAllowedCount()
+            ruleCount = ruleDb.getCount()
             }
         }
     }
