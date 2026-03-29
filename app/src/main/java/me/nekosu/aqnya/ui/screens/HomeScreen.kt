@@ -171,7 +171,7 @@ fun StatusCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(28.dp)),
     ) {
-        Box(
+      /*  Box(
             modifier =
                 Modifier
                     .matchParentSize()
@@ -186,7 +186,7 @@ fun StatusCard(
                                     ),
                             ),
                     ).blur(32.dp),
-        )
+        )*/
 
         Card(
             modifier = Modifier.fillMaxWidth(),
