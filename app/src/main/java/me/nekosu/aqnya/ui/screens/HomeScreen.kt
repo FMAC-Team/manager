@@ -59,9 +59,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.ncore
-import me.nekosu.aqnya.util.getAppVersion
 import me.nekosu.aqnya.util.RootDbHelper
 import me.nekosu.aqnya.util.RuleDbHelper
+import me.nekosu.aqnya.util.getAppVersion
 
 enum class InstallStatus {
     CHECKING,
@@ -94,10 +94,10 @@ fun HomeScreen() {
     LaunchedEffect(installStatus) {
         if (installStatus == InstallStatus.INSTALLED) {
             withContext(Dispatchers.IO) {
-          val rootDb = RootDbHelper(context)
-            val ruleDb = RuleDbHelper(context)
-            suCount = rootDb.getAllowedCount()
-            ruleCount = ruleDb.getCount()
+                val rootDb = RootDbHelper(context)
+                val ruleDb = RuleDbHelper(context)
+                suCount = rootDb.getAllowedCount()
+                ruleCount = ruleDb.getCount()
             }
         }
     }

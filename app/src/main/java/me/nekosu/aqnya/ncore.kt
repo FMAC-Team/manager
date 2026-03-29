@@ -18,7 +18,11 @@ class ncore {
     external fun deluid(value: Int): Int
 
     external fun hasuid(value: Int): Int
-    
-    external fun addRule(path: String, statusBits: Long): Int
-external fun delRule(path: String): Int
+
+    external fun addRule(
+        path: String,
+        statusBits: Long,
+    ): Int
+
+    external fun delRule(path: String): Int
 }

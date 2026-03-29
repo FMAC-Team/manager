@@ -217,7 +217,7 @@ fun MainScreen() {
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
                 ) { HistoryScreen() }
-                
+
                 composable(
                     route = BottomNavItem.FmacRules.route,
                     enterTransition = { fadeIn(commonTween) },
@@ -225,7 +225,6 @@ fun MainScreen() {
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
                 ) { RulesScreen() }
-
 
                 composable(
                     route = BottomNavItem.Settings.route,

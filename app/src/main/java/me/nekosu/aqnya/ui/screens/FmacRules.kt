@@ -70,8 +70,9 @@ import me.nekosu.aqnya.util.FMAC_BIT_DENY
 import me.nekosu.aqnya.util.FmacRule
 import me.nekosu.aqnya.util.RuleDbHelper
 
-class RulesViewModel(private val context: android.content.Context) : ViewModel() {
-
+class RulesViewModel(
+    private val context: android.content.Context,
+) : ViewModel() {
     private val db = RuleDbHelper(context)
 
     var rules by mutableStateOf<List<FmacRule>>(emptyList())
@@ -93,7 +94,11 @@ class RulesViewModel(private val context: android.content.Context) : ViewModel()
         }
     }
 
-    fun addRule(path: String, statusBits: Long, onDone: (Boolean) -> Unit) {
+    fun addRule(
+        path: String,
+        statusBits: Long,
+        onDone: (Boolean) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val rule = FmacRule(path.trim(), statusBits)
@@ -108,7 +113,10 @@ class RulesViewModel(private val context: android.content.Context) : ViewModel()
         }
     }
 
-    fun deleteRule(rule: FmacRule, onDone: (Boolean) -> Unit) {
+    fun deleteRule(
+        rule: FmacRule,
+        onDone: (Boolean) -> Unit,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 ncore().delRule(rule.path)
@@ -123,8 +131,9 @@ class RulesViewModel(private val context: android.content.Context) : ViewModel()
     }
 }
 
-class RulesViewModelFactory(private val context: android.content.Context) :
-    ViewModelProvider.Factory {
+class RulesViewModelFactory(
+    private val context: android.content.Context,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = RulesViewModel(context) as T
 }
@@ -169,51 +178,59 @@ fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
     ) { padding ->
         Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             when {
-                !vm.isLoaded -> CircularProgressIndicator(strokeWidth = 3.dp)
-
-                vm.rules.isEmpty() -> Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(
-                        Icons.Default.Shield,
-                        contentDescription = null,
-                        modifier = Modifier.size(48.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                    )
-                    Text("暂无规则", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                !vm.isLoaded -> {
+                    CircularProgressIndicator(strokeWidth = 3.dp)
                 }
 
-                else -> LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
-                ) {
-                    items(vm.rules, key = { it.path }) { rule ->
-                        RuleItem(
-                            rule = rule,
-                            onDelete = {
-                                vm.deleteRule(rule) { ok ->
-                                    scope.launch {
-                                        snackbar.showSnackbar(if (ok) "已删除" else "删除失败")
-                                    }
-                                }
-                            },
+                vm.rules.isEmpty() -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            Icons.Default.Shield,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                         )
+                        Text("暂无规则", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
+                    ) {
+                        items(vm.rules, key = { it.path }) { rule ->
+                            RuleItem(
+                                rule = rule,
+                                onDelete = {
+                                    vm.deleteRule(rule) { ok ->
+                                        scope.launch {
+                                            snackbar.showSnackbar(if (ok) "已删除" else "删除失败")
+                                        }
+                                    }
+                                },
+                            )
+                        }
                     }
                 }
             }
@@ -236,39 +253,51 @@ fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
 }
 
 @Composable
-fun RuleItem(rule: FmacRule, onDelete: () -> Unit) {
+fun RuleItem(
+    rule: FmacRule,
+    onDelete: () -> Unit,
+) {
     val haptic = LocalHapticFeedback.current
     val isDeny = (rule.statusBits shr FMAC_BIT_DENY) and 1L == 1L
-    val accentColor = if (isDeny)
-        MaterialTheme.colorScheme.error
-    else
-        MaterialTheme.colorScheme.primary
+    val accentColor =
+        if (isDeny) {
+            MaterialTheme.colorScheme.error
+        } else {
+            MaterialTheme.colorScheme.primary
+        }
     val isDir = rule.path.endsWith("/")
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = accentColor.copy(alpha = 0.06f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = accentColor.copy(alpha = 0.06f),
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
+                modifier =
+                    Modifier
+                        .size(40.dp)
+                        .background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
             ) {
                 Icon(
-                    imageVector = if (isDir) Icons.Default.Folder
-                                  else Icons.AutoMirrored.Filled.InsertDriveFile,
+                    imageVector =
+                        if (isDir) {
+                            Icons.Default.Folder
+                        } else {
+                            Icons.AutoMirrored.Filled.InsertDriveFile
+                        },
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(20.dp),
@@ -315,12 +344,16 @@ fun RuleItem(rule: FmacRule, onDelete: () -> Unit) {
 }
 
 @Composable
-private fun BitChip(label: String, color: androidx.compose.ui.graphics.Color) {
+private fun BitChip(
+    label: String,
+    color: androidx.compose.ui.graphics.Color,
+) {
     Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(color.copy(alpha = 0.12f))
-            .padding(horizontal = 6.dp, vertical = 2.dp),
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(6.dp))
+                .background(color.copy(alpha = 0.12f))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
             text = label,
@@ -351,7 +384,10 @@ fun AddRuleDialog(
             Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                 OutlinedTextField(
                     value = path,
-                    onValueChange = { path = it; pathError = false },
+                    onValueChange = {
+                        path = it
+                        pathError = false
+                    },
                     label = { Text("路径") },
                     placeholder = { Text("/data/local/tmp/") },
                     isError = pathError,
@@ -370,19 +406,22 @@ fun AddRuleDialog(
                         selected = deny,
                         onClick = { deny = !deny },
                         label = { Text("DENY") },
-                        leadingIcon = if (deny) {
-                            { Icon(Icons.Default.Block, null, Modifier.size(16.dp)) }
-                        } else null,
+                        leadingIcon =
+                            if (deny) {
+                                { Icon(Icons.Default.Block, null, Modifier.size(16.dp)) }
+                            } else {
+                                null
+                            },
                     )
                 }
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        )
-                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            ).padding(horizontal = 14.dp, vertical = 10.dp),
                 ) {
                     Text(
                         text = "status_bits = 0x%x".format(computeBits()),
@@ -396,7 +435,10 @@ fun AddRuleDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (path.isBlank()) { pathError = true; return@Button }
+                    if (path.isBlank()) {
+                        pathError = true
+                        return@Button
+                    }
                     onConfirm(path.trim(), computeBits())
                 },
                 shape = RoundedCornerShape(14.dp),
