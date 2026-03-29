@@ -1,15 +1,8 @@
 package me.nekosu.aqnya.ui.screens
 
-import android.content.ContentValues
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.animateContentSize
@@ -60,52 +53,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
-
-class RootDbHelper(
-    context: Context,
-) : SQLiteOpenHelper(context, "root_manager.db", null, 1) {
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("CREATE TABLE root_apps (packageName TEXT PRIMARY KEY, allowed INTEGER)")
-    }
-
-    fun getAllowedPackages(): Set<String> {
-        val set = mutableSetOf<String>()
-        readableDatabase.rawQuery("SELECT packageName FROM root_apps WHERE allowed = 1", null).use { cursor ->
-            while (cursor.moveToNext()) {
-                set.add(cursor.getString(0))
-            }
-        }
-        return set
-    }
-
-    override fun onUpgrade(
-        db: SQLiteDatabase,
-        oldVersion: Int,
-        newVersion: Int,
-    ) {
-        db.execSQL("DROP TABLE IF EXISTS root_apps")
-        onCreate(db)
-    }
-
-    fun setAllowed(
-        packageName: String,
-        allowed: Boolean,
-    ) {
-        val values =
-            ContentValues().apply {
-                put("packageName", packageName)
-                put("allowed", if (allowed) 1 else 0)
-            }
-        writableDatabase.insertWithOnConflict("root_apps", null, values, SQLiteDatabase.CONFLICT_REPLACE)
-    }
-
-    fun getAllowedCount(): Int =
-        readableDatabase
-            .rawQuery("SELECT COUNT(*) FROM root_apps WHERE allowed = 1", null)
-            .use { cursor ->
-                if (cursor.moveToFirst()) cursor.getInt(0) else 0
-            }
-}
+import me.nekosu.aqnya.util.RootDbHelper
 
 data class AppInfo(
     val name: String,
@@ -133,10 +81,8 @@ class AppViewModel(
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
-
     var isLoaded by mutableStateOf(false)
         private set
-
     var allowedApps by mutableStateOf<Set<String>>(emptySet())
         private set
 
@@ -149,14 +95,15 @@ class AppViewModel(
             for (pkg in allowed) {
                 try {
                     val uid = pm.getApplicationInfo(pkg, 0).uid
-                    if (nc.hasuid(uid) == 0) {
-                        nc.adduid(uid)
-                    }
-                } catch (_: Exception) {
-                    // Skip
-                }
+                    if (nc.hasuid(uid) == 0) nc.adduid(uid)
+                } catch (_: Exception) {}
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        dbHelper.close()
     }
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
@@ -171,40 +118,28 @@ class AppViewModel(
                     if (allApps.isNotEmpty()) return@withContext
                 }
             }
-
             val pm = context.packageManager
-            val installed =
-                pm
-                    .getInstalledPackages(PackageManager.GET_META_DATA)
-                    .mapNotNull { pkg ->
-                        pkg.applicationInfo?.let { ai ->
-                            AppInfo(
-                                name = ai.loadLabel(pm).toString(),
-                                packageName = pkg.packageName,
-                                uid = ai.uid,
-                                isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                                isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
-                            )
-                        }
-                    }.sortedBy { it.name.lowercase() }
-
+            val installed = pm
+                .getInstalledPackages(PackageManager.GET_META_DATA)
+                .mapNotNull { pkg ->
+                    pkg.applicationInfo?.let { ai ->
+                        AppInfo(
+                            name = ai.loadLabel(pm).toString(),
+                            packageName = pkg.packageName,
+                            uid = ai.uid,
+                            isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                            isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
+                        )
+                    }
+                }.sortedBy { it.name.lowercase() }
             allApps = installed
             isLoaded = true
             prefs.edit().putString("apps_cache", gson.toJson(installed)).apply()
         }
     }
 
-    fun toggleRootPermission(
-        app: AppInfo,
-        allow: Boolean,
-    ) {
-        allowedApps =
-            if (allow) {
-                allowedApps + app.packageName
-            } else {
-                allowedApps - app.packageName
-            }
-
+    fun toggleRootPermission(app: AppInfo, allow: Boolean) {
+        allowedApps = if (allow) allowedApps + app.packageName else allowedApps - app.packageName
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, allow)
             val nc = ncore()
@@ -213,16 +148,14 @@ class AppViewModel(
     }
 }
 
-class AppViewModelFactory(
-    private val context: Context,
-) : ViewModelProvider.Factory {
+class AppViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(context) as T
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen() {
+fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
     val context = LocalContext.current.applicationContext
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
@@ -232,34 +165,29 @@ fun HistoryScreen() {
     var isSearching by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadApps()
-    }
+    LaunchedEffect(Unit) { viewModel.loadApps() }
 
     val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
 
     LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
         sortSnapshotAllowed.value = viewModel.allowedApps
-        apps =
-            viewModel.allApps
-                .filter { app ->
-                    val passFilter =
-                        when (filterMode) {
-                            FilterMode.ALL -> true
-                            FilterMode.LAUNCHABLE -> app.isLaunchable
-                            FilterMode.SYSTEM -> app.isSystem
-                            FilterMode.USER -> !app.isSystem
-                        }
-                    val q = searchQuery.trim().lowercase()
-                    val passSearch =
-                        q.isEmpty() ||
-                            app.name.lowercase().contains(q) ||
-                            app.packageName.lowercase().contains(q)
-                    passFilter && passSearch
-                }.sortedWith(
-                    compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
-                        .thenBy { it.name.lowercase() },
-                )
+        apps = viewModel.allApps
+            .filter { app ->
+                val passFilter = when (filterMode) {
+                    FilterMode.ALL -> true
+                    FilterMode.LAUNCHABLE -> app.isLaunchable
+                    FilterMode.SYSTEM -> app.isSystem
+                    FilterMode.USER -> !app.isSystem
+                }
+                val q = searchQuery.trim().lowercase()
+                val passSearch = q.isEmpty() ||
+                    app.name.lowercase().contains(q) ||
+                    app.packageName.lowercase().contains(q)
+                passFilter && passSearch
+            }.sortedWith(
+                compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
+                    .thenBy { it.name.lowercase() }
+            )
     }
 
     Scaffold(
@@ -273,14 +201,13 @@ fun HistoryScreen() {
                             placeholder = { Text("搜索应用...") },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
-                            colors =
-                                TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    disabledContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
+                            colors = TextFieldDefaults.colors(
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
+                                disabledContainerColor = Color.Transparent,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                            ),
                         )
                     } else {
                         Text(
@@ -292,10 +219,7 @@ fun HistoryScreen() {
                 },
                 navigationIcon = {
                     if (isSearching) {
-                        IconButton(onClick = {
-                            isSearching = false
-                            searchQuery = ""
-                        }) {
+                        IconButton(onClick = { isSearching = false; searchQuery = "" }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                         }
                     }
@@ -323,54 +247,40 @@ fun HistoryScreen() {
                             FilterMode.entries.forEach { mode ->
                                 DropdownMenuItem(
                                     text = { Text(stringResource(mode.labelRes)) },
-                                    onClick = {
-                                        filterMode = mode
-                                        menuExpanded = false
-                                    },
+                                    onClick = { filterMode = mode; menuExpanded = false },
                                 )
                             }
                         }
                     }
                 },
-                colors =
-                    TopAppBarDefaults.centerAlignedTopAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                    ),
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                ),
             )
         },
     ) { innerPadding ->
         Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             if (!viewModel.isLoaded) {
                 CircularProgressIndicator(strokeWidth = 3.dp)
             } else if (apps.isEmpty()) {
-                Text(
-                    text = "未找到相关应用",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                Text("未找到相关应用", color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding =
-                        PaddingValues(
-                            top = 12.dp,
-                            bottom = 80.dp,
-                        ),
+                    contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
                 ) {
                     items(apps, key = { it.packageName }) { app ->
                         AppInfoItem(
                             app = app,
                             isAllowed = viewModel.allowedApps.contains(app.packageName),
-                            onToggle = { checked ->
-                                viewModel.toggleRootPermission(app, checked)
-                            },
+                            onToggle = { checked -> viewModel.toggleRootPermission(app, checked) },
                         )
                     }
                 }
@@ -387,31 +297,29 @@ fun AppInfoItem(
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isOverflown by remember { mutableStateOf(false) }
+    val haptic = LocalHapticFeedback.current
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-            ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+        ),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                    .padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier =
-                    Modifier
-                        .size(48.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary.copy(0.08f),
-                            RoundedCornerShape(14.dp),
-                        ),
+                modifier = Modifier
+                    .size(48.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary.copy(0.08f),
+                        RoundedCornerShape(14.dp),
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 AppIcon(app.packageName, Modifier.size(30.dp))
@@ -420,20 +328,17 @@ fun AppInfoItem(
             Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(end = 24.dp)
-                        .let { modifier ->
-                            if (isOverflown || expanded) {
-                                modifier.clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { expanded = !expanded }
-                            } else {
-                                modifier
-                            }
-                        },
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 24.dp)
+                    .let { mod ->
+                        if (isOverflown || expanded) {
+                            mod.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { expanded = !expanded }
+                        } else mod
+                    },
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
@@ -443,25 +348,13 @@ fun AppInfoItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-
                 AnimatedContent(
                     targetState = expanded,
                     transitionSpec = {
-                        val fastSpec = tween<IntSize>(durationMillis = 250)
-                        val fastFadeSpec = tween<Float>(durationMillis = 200)
-                        (
-                            fadeIn(fastFadeSpec) +
-                                expandHorizontally(
-                                    animationSpec = fastSpec,
-                                    expandFrom = Alignment.Start,
-                                )
-                        ).togetherWith(
-                            fadeOut(fastFadeSpec) +
-                                shrinkHorizontally(
-                                    animationSpec = fastSpec,
-                                    shrinkTowards = Alignment.Start,
-                                ),
-                        )
+                        val sizeSpec = tween<IntSize>(250)
+                        val fadeSpec = tween<Float>(200)
+                        (fadeIn(fadeSpec) + expandHorizontally(sizeSpec, Alignment.Start))
+                            .togetherWith(fadeOut(fadeSpec) + shrinkHorizontally(sizeSpec, Alignment.Start))
                     },
                     label = "textReveal",
                 ) { isExpanded ->
@@ -470,15 +363,10 @@ fun AppInfoItem(
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
                         maxLines = if (isExpanded) Int.MAX_VALUE else 1,
                         overflow = TextOverflow.Ellipsis,
-                        onTextLayout = { textLayoutResult ->
-                            if (!isExpanded) {
-                                isOverflown = textLayoutResult.hasVisualOverflow
-                            }
-                        },
+                        onTextLayout = { if (!isExpanded) isOverflown = it.hasVisualOverflow },
                     )
                 }
             }
-            val haptic = LocalHapticFeedback.current
 
             Switch(
                 checked = isAllowed,
@@ -486,43 +374,26 @@ fun AppInfoItem(
                     haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                     onToggle(it)
                 },
-                thumbContent =
-                    if (isAllowed) {
-                        { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                    } else {
-                        null
-                    },
+                thumbContent = if (isAllowed) {
+                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                } else null,
             )
         }
     }
 }
 
 @Composable
-fun AppIcon(
-    packageName: String,
-    modifier: Modifier = Modifier,
-) {
+fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value =
-            withContext(Dispatchers.IO) {
-                try {
-                    context.packageManager
-                        .getApplicationIcon(packageName)
-                        .toBitmap()
-                        .asImageBitmap()
-                } catch (e: Exception) {
-                    null
-                }
-            }
+        value = withContext(Dispatchers.IO) {
+            try {
+                context.packageManager.getApplicationIcon(packageName).toBitmap().asImageBitmap()
+            } catch (_: Exception) { null }
+        }
     }
-
     if (iconBitmap != null) {
-        Image(
-            bitmap = iconBitmap!!,
-            contentDescription = null,
-            modifier = modifier,
-        )
+        Image(bitmap = iconBitmap!!, contentDescription = null, modifier = modifier)
     } else {
         Icon(
             imageVector = Icons.Default.Android,
@@ -536,7 +407,5 @@ fun AppIcon(
 @Preview(showBackground = true)
 @Composable
 fun PreviewHistoryScreen() {
-    MaterialTheme {
-        HistoryScreen()
-    }
+    MaterialTheme { HistoryScreen() }
 }

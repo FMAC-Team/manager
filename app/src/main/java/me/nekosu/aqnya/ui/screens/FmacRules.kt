@@ -1,41 +1,26 @@
 package me.nekosu.aqnya.ui.screens
 
-import android.content.ContentValues
-import android.content.Context
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteOpenHelper
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -43,9 +28,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,8 +54,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -82,60 +65,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import me.nekosu.aqnya.ncore
+import me.nekosu.aqnya.util.FMAC_BIT_DENY
+import me.nekosu.aqnya.util.FmacRule
+import me.nekosu.aqnya.util.RuleDbHelper
 
-const val FMAC_BIT_DENY = 0
-const val FMAC_BIT_NOT_FOUND = 1
-
-data class FmacRule(
-    val path: String,
-    val statusBits: Long,
-)
-
-class RuleDbHelper(context: Context) :
-    SQLiteOpenHelper(context, "fmac_rules.db", null, 1) {
-
-    override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL(
-            "CREATE TABLE rules (path TEXT PRIMARY KEY, status_bits INTEGER NOT NULL)"
-        )
-    }
-
-    override fun onUpgrade(db: SQLiteDatabase, old: Int, new: Int) {
-        db.execSQL("DROP TABLE IF EXISTS rules")
-        onCreate(db)
-    }
-
-    fun getAll(): List<FmacRule> {
-        val list = mutableListOf<FmacRule>()
-        readableDatabase.rawQuery("SELECT path, status_bits FROM rules", null).use { c ->
-            while (c.moveToNext())
-                list += FmacRule(c.getString(0), c.getLong(1))
-        }
-        return list
-    }
-
-    fun getCount(): Int =
-        readableDatabase.rawQuery("SELECT COUNT(*) FROM rules", null)
-            .use { c -> if (c.moveToFirst()) c.getInt(0) else 0 }
-
-    fun insert(rule: FmacRule) {
-        val cv = ContentValues().apply {
-            put("path", rule.path)
-            put("status_bits", rule.statusBits)
-        }
-        writableDatabase.insertWithOnConflict(
-            "rules", null, cv, SQLiteDatabase.CONFLICT_REPLACE
-        )
-    }
-
-    fun delete(path: String) {
-        writableDatabase.delete("rules", "path = ?", arrayOf(path))
-    }
-}
-
-class RulesViewModel(private val context: Context) : ViewModel() {
+class RulesViewModel(private val context: android.content.Context) : ViewModel() {
 
     private val db = RuleDbHelper(context)
 
@@ -146,6 +81,11 @@ class RulesViewModel(private val context: Context) : ViewModel() {
     var error by mutableStateOf<String?>(null)
         private set
 
+    override fun onCleared() {
+        super.onCleared()
+        db.close()
+    }
+
     fun load() {
         viewModelScope.launch(Dispatchers.IO) {
             rules = db.getAll()
@@ -153,45 +93,45 @@ class RulesViewModel(private val context: Context) : ViewModel() {
         }
     }
 
-  fun addRule(path: String, statusBits: Long, onDone: (Boolean) -> Unit) {
-    viewModelScope.launch(Dispatchers.IO) {
-        try {
-            val rule = FmacRule(path.trim(), statusBits)
-            ncore().addRule(rule.path, rule.statusBits)
-            db.insert(rule)
-            rules = db.getAll()
-            withContext(Dispatchers.Main) { onDone(true) }
-        } catch (e: Exception) {
-            error = e.message
-            withContext(Dispatchers.Main) { onDone(false) }
+    fun addRule(path: String, statusBits: Long, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val rule = FmacRule(path.trim(), statusBits)
+                ncore().addRule(rule.path, rule.statusBits)
+                db.insert(rule)
+                rules = db.getAll()
+                withContext(Dispatchers.Main) { onDone(true) }
+            } catch (e: Exception) {
+                error = e.message
+                withContext(Dispatchers.Main) { onDone(false) }
+            }
+        }
+    }
+
+    fun deleteRule(rule: FmacRule, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                ncore().delRule(rule.path)
+                db.delete(rule.path)
+                rules = db.getAll()
+                withContext(Dispatchers.Main) { onDone(true) }
+            } catch (e: Exception) {
+                error = e.message
+                withContext(Dispatchers.Main) { onDone(false) }
+            }
         }
     }
 }
 
-fun deleteRule(rule: FmacRule, onDone: (Boolean) -> Unit) {
-    viewModelScope.launch(Dispatchers.IO) {
-        try {
-            ncore().delRule(rule.path)
-            db.delete(rule.path)
-            rules = db.getAll()
-            withContext(Dispatchers.Main) { onDone(true) }
-        } catch (e: Exception) {
-            error = e.message
-            withContext(Dispatchers.Main) { onDone(false) }
-        }
-    }
-}
-}
-
-class RulesViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class RulesViewModelFactory(private val context: android.content.Context) :
+    ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        RulesViewModel(context) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = RulesViewModel(context) as T
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RulesScreen() {
+fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
     val context = LocalContext.current.applicationContext
     val vm: RulesViewModel = viewModel(factory = RulesViewModelFactory(context))
     val snackbar = remember { SnackbarHostState() }
@@ -221,20 +161,19 @@ fun RulesScreen() {
                     }
                 },
                 actions = {
-            IconButton(onClick = { showAddDialog = true }) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "添加规则",
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
-        },
+                    IconButton(onClick = { showAddDialog = true }) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "添加规则",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                 ),
             )
         },
-
     ) { padding ->
         Box(
             modifier = Modifier
@@ -250,16 +189,19 @@ fun RulesScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    Text(
-                        "暂无规则",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    Icon(
+                        Icons.Default.Shield,
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                     )
+                    Text("暂无规则", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
 
                 else -> LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(top = 12.dp, bottom = 88.dp),
+                    contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
                 ) {
                     items(vm.rules, key = { it.path }) { rule ->
                         RuleItem(
@@ -294,17 +236,13 @@ fun RulesScreen() {
 }
 
 @Composable
-fun RuleItem(
-    rule: FmacRule,
-    onDelete: () -> Unit,
-) {
+fun RuleItem(rule: FmacRule, onDelete: () -> Unit) {
     val haptic = LocalHapticFeedback.current
     val isDeny = (rule.statusBits shr FMAC_BIT_DENY) and 1L == 1L
     val accentColor = if (isDeny)
         MaterialTheme.colorScheme.error
     else
         MaterialTheme.colorScheme.primary
-
     val isDir = rule.path.endsWith("/")
 
     Card(
@@ -329,7 +267,8 @@ fun RuleItem(
                     .background(accentColor.copy(alpha = 0.12f), RoundedCornerShape(12.dp)),
             ) {
                 Icon(
-imageVector = if (isDir) Icons.Default.Folder else Icons.AutoMirrored.Filled.InsertDriveFile,
+                    imageVector = if (isDir) Icons.Default.Folder
+                                  else Icons.AutoMirrored.Filled.InsertDriveFile,
                     contentDescription = null,
                     tint = accentColor,
                     modifier = Modifier.size(20.dp),
@@ -440,7 +379,9 @@ fun AddRuleDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
                         .padding(horizontal = 14.dp, vertical = 10.dp),
                 ) {
                     Text(
