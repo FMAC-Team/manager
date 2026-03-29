@@ -203,12 +203,6 @@ fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(
-                            Icons.Default.Shield,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                        )
                         Text("暂无规则", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
