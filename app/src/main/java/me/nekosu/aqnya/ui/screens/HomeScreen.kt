@@ -20,8 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -39,6 +41,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,6 +73,8 @@ fun HomeScreen() {
     val context = LocalContext.current
     var showInstallSheet by remember { mutableStateOf(false) }
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
+    var suCount by remember { mutableIntStateOf(0) }
+    var ruleCount by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(Unit) {
         installStatus =
@@ -82,6 +87,17 @@ fun HomeScreen() {
                     InstallStatus.NOT_INSTALLED
                 }
             }
+    }
+
+    LaunchedEffect(installStatus) {
+        if (installStatus == InstallStatus.INSTALLED) {
+            withContext(Dispatchers.IO) {
+            val db = RootDbHelper(context)
+            suCount = db.getAllowedCount()
+                ruleCount = 1
+                // TODO
+            }
+        }
     }
 
     Scaffold(
@@ -120,12 +136,83 @@ fun HomeScreen() {
                     }
                 },
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatCard(
+                    icon = Icons.Filled.Group,
+                    label = "超级用户",
+                    value = if (installStatus == InstallStatus.CHECKING) "—" else suCount.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    icon = Icons.Filled.Policy,
+                    label = "FMAC 规则",
+                    value = if (installStatus == InstallStatus.CHECKING) "—" else ruleCount.toString(),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
             DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
 
     if (showInstallSheet) {
         ncore().helloLog()
+    }
+}
+
+@Composable
+fun StatCard(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                        shape = RoundedCornerShape(12.dp),
+                    ),
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
+            )
+        }
     }
 }
 
@@ -171,23 +258,6 @@ fun StatusCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(28.dp)),
     ) {
-      /*  Box(
-            modifier =
-                Modifier
-                    .matchParentSize()
-                    .background(
-                        brush =
-                            Brush.radialGradient(
-                                colors =
-                                    listOf(
-                                        glassColor.copy(alpha = 0.25f),
-                                        glassColor.copy(alpha = 0.05f),
-                                        Color.Transparent,
-                                    ),
-                            ),
-                    ).blur(32.dp),
-        )*/
-
         Card(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
