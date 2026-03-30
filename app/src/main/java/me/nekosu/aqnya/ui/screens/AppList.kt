@@ -6,7 +6,10 @@ import android.content.pm.PackageManager
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -28,6 +31,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -170,7 +174,17 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
     var searchQuery by remember { mutableStateOf("") }
     var menuExpanded by remember { mutableStateOf(false) }
     var isSearching by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+
+    val refreshRotation by animateFloatAsState(
+        targetValue = if (isRefreshing) 360f else 0f,
+        animationSpec = if (isRefreshing)
+            infiniteRepeatable(tween(600, easing = LinearEasing))
+        else
+            tween(300),
+        label = "refreshRotation",
+    )
 
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
@@ -243,10 +257,22 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                         IconButton(onClick = { isSearching = true }) {
                             Icon(Icons.Default.Search, contentDescription = null)
                         }
-                        IconButton(onClick = {
-                            scope.launch { viewModel.loadApps(forceRefresh = true) }
-                        }) {
-                            Icon(Icons.Default.Refresh, contentDescription = null)
+                        IconButton(
+                            onClick = {
+                                if (!isRefreshing) {
+                                    isRefreshing = true
+                                    scope.launch {
+                                        viewModel.loadApps(forceRefresh = true)
+                                        isRefreshing = false
+                                    }
+                                }
+                            },
+                        ) {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = null,
+                                modifier = Modifier.rotate(refreshRotation),
+                            )
                         }
                     }
                     Box {
@@ -300,6 +326,14 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                             app = app,
                             isAllowed = viewModel.allowedApps.contains(app.packageName),
                             onToggle = { checked -> viewModel.toggleRootPermission(app, checked) },
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(200),
+                                placementSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium,
+                                ),
+                                fadeOutSpec = tween(150),
+                            ),
                         )
                     }
                 }
@@ -313,13 +347,14 @@ fun AppInfoItem(
     app: AppInfo,
     isAllowed: Boolean,
     onToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isOverflown by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
         colors =
             CardDefaults.cardColors(
