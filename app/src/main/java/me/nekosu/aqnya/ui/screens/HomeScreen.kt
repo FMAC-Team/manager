@@ -144,13 +144,13 @@ fun HomeScreen() {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 StatCard(
-                    icon = Icons.Filled.Group,
+               //     icon = Icons.Filled.Group,
                     label = "超级用户",
                     value = if (installStatus == InstallStatus.CHECKING) "—" else suCount.toString(),
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
-                    icon = Icons.Filled.Policy,
+               //     icon = Icons.Filled.Policy,
                     label = "FMAC 规则",
                     value = if (installStatus == InstallStatus.CHECKING) "—" else ruleCount.toString(),
                     modifier = Modifier.weight(1f),
@@ -168,7 +168,7 @@ fun HomeScreen() {
 
 @Composable
 fun StatCard(
-    icon: ImageVector,
+ //   icon: ImageVector,
     label: String,
     value: String,
     modifier: Modifier = Modifier,
@@ -189,7 +189,7 @@ fun StatCard(
                     .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Box(
+          /*  Box(
                 contentAlignment = Alignment.Center,
                 modifier =
                     Modifier
@@ -205,7 +205,7 @@ fun StatCard(
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp),
                 )
-            }
+            }*/
             Text(
                 text = value,
                 style = MaterialTheme.typography.headlineMedium,
