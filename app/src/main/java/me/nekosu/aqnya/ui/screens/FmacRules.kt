@@ -218,9 +218,8 @@ fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
                                 rule = rule,
                                 onDelete = {
                                     vm.deleteRule(rule) { ok ->
-                                        scope.launch {
-                                            snackbar.showSnackbar(if (ok) "已删除" else "删除失败")
-                                        }
+val message = if (ok) "已删除" else "删除失败"
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
                                     }
                                 },
                             )
@@ -237,9 +236,8 @@ fun RulesScreen(extraBottomPadding: Dp = 96.dp) {
             onConfirm = { path, bits ->
                 showAddDialog = false
                 vm.addRule(path, bits) { ok ->
-                    scope.launch {
-                        snackbar.showSnackbar(if (ok) "规则已添加" else "添加失败")
-                    }
+val message = if (ok) "规则已添加" else "添加失败"
+                android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
                 }
             },
         )
