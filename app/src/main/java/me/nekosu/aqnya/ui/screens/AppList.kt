@@ -179,10 +179,12 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
 
     val refreshRotation by animateFloatAsState(
         targetValue = if (isRefreshing) 360f else 0f,
-        animationSpec = if (isRefreshing)
-            infiniteRepeatable(tween(600, easing = LinearEasing))
-        else
-            tween(300),
+        animationSpec =
+            if (isRefreshing) {
+                infiniteRepeatable(tween(600, easing = LinearEasing))
+            } else {
+                tween(300)
+            },
         label = "refreshRotation",
     )
 
@@ -326,14 +328,16 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                             app = app,
                             isAllowed = viewModel.allowedApps.contains(app.packageName),
                             onToggle = { checked -> viewModel.toggleRootPermission(app, checked) },
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = tween(200),
-                                placementSpec = spring(
-                                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                                    stiffness = Spring.StiffnessMedium,
+                            modifier =
+                                Modifier.animateItem(
+                                    fadeInSpec = tween(200),
+                                    placementSpec =
+                                        spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessMedium,
+                                        ),
+                                    fadeOutSpec = tween(150),
                                 ),
-                                fadeOutSpec = tween(150),
-                            ),
                         )
                     }
                 }
