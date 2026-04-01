@@ -61,21 +61,28 @@ data class AppInfo(
     val isLaunchable: Boolean,
 )
 
-enum class FilterMode(@param:StringRes val labelRes: Int) {
+enum class FilterMode(
+    @param:StringRes val labelRes: Int,
+) {
     ALL(R.string.all_app),
     LAUNCHABLE(R.string.can_launch_app),
     SYSTEM(R.string.system_app),
     USER(R.string.user_app),
 }
 
-class AppViewModel(private val context: Context) : ViewModel() {
+class AppViewModel(
+    private val context: Context,
+) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
     private val dbHelper = RootDbHelper(context)
 
-    var allApps by mutableStateOf<List<AppInfo>>(emptyList()); private set
-    var isLoaded by mutableStateOf(false); private set
-    var allowedApps by mutableStateOf<Set<String>>(emptySet()); private set
+    var allApps by mutableStateOf<List<AppInfo>>(emptyList())
+        private set
+    var isLoaded by mutableStateOf(false)
+        private set
+    var allowedApps by mutableStateOf<Set<String>>(emptySet())
+        private set
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
@@ -87,12 +94,16 @@ class AppViewModel(private val context: Context) : ViewModel() {
                 try {
                     val uid = pm.getApplicationInfo(pkg, 0).uid
                     if (nc.hasuid(uid) == 0) nc.adduid(uid)
-                } catch (_: Exception) {}
+                } catch (_: Exception) {
+                }
             }
         }
     }
 
-    override fun onCleared() { super.onCleared(); dbHelper.close() }
+    override fun onCleared() {
+        super.onCleared()
+        dbHelper.close()
+    }
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -106,24 +117,29 @@ class AppViewModel(private val context: Context) : ViewModel() {
                 }
             }
             val pm = context.packageManager
-            allApps = pm.getInstalledPackages(PackageManager.GET_META_DATA)
-                .mapNotNull { pkg ->
-                    pkg.applicationInfo?.let { ai ->
-                        AppInfo(
-                            name = ai.loadLabel(pm).toString(),
-                            packageName = pkg.packageName,
-                            uid = ai.uid,
-                            isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                            isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
-                        )
-                    }
-                }.sortedBy { it.name.lowercase() }
+            allApps =
+                pm
+                    .getInstalledPackages(PackageManager.GET_META_DATA)
+                    .mapNotNull { pkg ->
+                        pkg.applicationInfo?.let { ai ->
+                            AppInfo(
+                                name = ai.loadLabel(pm).toString(),
+                                packageName = pkg.packageName,
+                                uid = ai.uid,
+                                isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                                isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
+                            )
+                        }
+                    }.sortedBy { it.name.lowercase() }
             isLoaded = true
             prefs.edit().putString("apps_cache", gson.toJson(allApps)).apply()
         }
     }
 
-    fun toggleRootPermission(app: AppInfo, allow: Boolean) {
+    fun toggleRootPermission(
+        app: AppInfo,
+        allow: Boolean,
+    ) {
         allowedApps = if (allow) allowedApps + app.packageName else allowedApps - app.packageName
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, allow)
@@ -133,20 +149,25 @@ class AppViewModel(private val context: Context) : ViewModel() {
     }
 }
 
-class AppViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class AppViewModelFactory(
+    private val context: Context,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(context) as T
 }
 
 @Composable
-fun getAdapterShape(index: Int, totalCount: Int, cornerRadius: Dp = 20.dp): Shape {
-    return when {
+fun getAdapterShape(
+    index: Int,
+    totalCount: Int,
+    cornerRadius: Dp = 20.dp,
+): Shape =
+    when {
         totalCount <= 1 -> RoundedCornerShape(cornerRadius)
         index == 0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
         index == totalCount - 1 -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
         else -> RoundedCornerShape(0.dp)
     }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,7 +184,8 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
 
     val infiniteTransition = rememberInfiniteTransition(label = "refresh")
     val infiniteAngle by infiniteTransition.animateFloat(
-        initialValue = 0f, targetValue = 360f,
+        initialValue = 0f,
+        targetValue = 360f,
         animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing)),
         label = "refreshSpin",
     )
@@ -174,24 +196,26 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
     val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
     LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
         sortSnapshotAllowed.value = viewModel.allowedApps
-        apps = viewModel.allApps
-            .filter { app ->
-                val passFilter = when (filterMode) {
-                    FilterMode.ALL -> true
-                    FilterMode.LAUNCHABLE -> app.isLaunchable
-                    FilterMode.SYSTEM -> app.isSystem
-                    FilterMode.USER -> !app.isSystem
-                }
-                val q = searchQuery.trim().lowercase()
-                val passSearch = q.isEmpty() ||
-                        app.name.lowercase().contains(q) ||
-                        app.packageName.lowercase().contains(q)
-                passFilter && passSearch
-            }
-            .sortedWith(
-                compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
-                    .thenBy { it.name.lowercase() }
-            )
+        apps =
+            viewModel.allApps
+                .filter { app ->
+                    val passFilter =
+                        when (filterMode) {
+                            FilterMode.ALL -> true
+                            FilterMode.LAUNCHABLE -> app.isLaunchable
+                            FilterMode.SYSTEM -> app.isSystem
+                            FilterMode.USER -> !app.isSystem
+                        }
+                    val q = searchQuery.trim().lowercase()
+                    val passSearch =
+                        q.isEmpty() ||
+                            app.name.lowercase().contains(q) ||
+                            app.packageName.lowercase().contains(q)
+                    passFilter && passSearch
+                }.sortedWith(
+                    compareByDescending<AppInfo> { sortSnapshotAllowed.value.contains(it.packageName) }
+                        .thenBy { it.name.lowercase() },
+                )
     }
 
     Scaffold(
@@ -206,21 +230,29 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                 placeholder = { Text("搜索应用…", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                    ),
                             )
                         } else {
-                            Text(text = stringResource(filterMode.labelRes), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            Text(
+                                text = stringResource(filterMode.labelRes),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 },
                 navigationIcon = {
                     if (isSearching) {
-                        IconButton(onClick = { isSearching = false; searchQuery = "" }) {
+                        IconButton(onClick = {
+                            isSearching = false
+                            searchQuery = ""
+                        }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                         }
                     }
@@ -231,7 +263,10 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                         IconButton(onClick = {
                             if (!isRefreshing) {
                                 isRefreshing = true
-                                scope.launch { viewModel.loadApps(forceRefresh = true); isRefreshing = false }
+                                scope.launch {
+                                    viewModel.loadApps(forceRefresh = true)
+                                    isRefreshing = false
+                                }
                             }
                         }) {
                             Icon(Icons.Default.Refresh, null, modifier = Modifier.rotate(refreshRotation))
@@ -246,14 +281,36 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                         ) {
                             FilterMode.entries.forEach { mode ->
                                 DropdownMenuItem(
-                                    text = { Text(stringResource(mode.labelRes), fontWeight = if (mode == filterMode) FontWeight.SemiBold else FontWeight.Normal) },
-                                    leadingIcon = if (mode == filterMode) { { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) } } else null,
-                                    onClick = { filterMode = mode; menuExpanded = false },
+                                    text = {
+                                        Text(
+                                            stringResource(mode.labelRes),
+                                            fontWeight =
+                                                if (mode ==
+                                                    filterMode
+                                                ) {
+                                                    FontWeight.SemiBold
+                                                } else {
+                                                    FontWeight.Normal
+                                                },
+                                        )
+                                    },
+                                    leadingIcon =
+                                        if (mode ==
+                                            filterMode
+                                        ) {
+                                            { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
+                                        } else {
+                                            null
+                                        },
+                                    onClick = {
+                                        filterMode = mode
+                                        menuExpanded = false
+                                    },
                                 )
                             }
                         }
                     }
-                }
+                },
             )
         },
     ) { innerPadding ->
@@ -262,8 +319,14 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
             contentAlignment = Alignment.Center,
         ) {
             when {
-                !viewModel.isLoaded -> LoadingState()
-                apps.isEmpty() -> EmptyState(isSearching, searchQuery)
+                !viewModel.isLoaded -> {
+                    LoadingState()
+                }
+
+                apps.isEmpty() -> {
+                    EmptyState(isSearching, searchQuery)
+                }
+
                 else -> {
                     val allowedList = apps.filter { viewModel.allowedApps.contains(it.packageName) }
                     val otherList = apps.filter { !viewModel.allowedApps.contains(it.packageName) }
@@ -281,7 +344,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                     isAllowed = true,
                                     onToggle = { viewModel.toggleRootPermission(app, it) },
                                     shape = getAdapterShape(index, allowedList.size),
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier.animateItem(),
                                 )
                             }
                             item { Spacer(Modifier.height(12.dp)) }
@@ -295,7 +358,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                     isAllowed = false,
                                     onToggle = { viewModel.toggleRootPermission(app, it) },
                                     shape = getAdapterShape(index, otherList.size),
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier.animateItem(),
                                 )
                             }
                         }
@@ -326,10 +389,29 @@ private fun LoadingState() {
 }
 
 @Composable
-private fun EmptyState(isSearching: Boolean, query: String) {
+private fun EmptyState(
+    isSearching: Boolean,
+    query: String,
+) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Icon(imageVector = if (isSearching) Icons.Default.Search else Icons.Default.Android, contentDescription = null, modifier = Modifier.size(40.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f))
-        Text(text = if (isSearching && query.isNotBlank()) "未找到「${query}」" else "暂无应用", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        Icon(
+            imageVector = if (isSearching) Icons.Default.Search else Icons.Default.Android,
+            contentDescription = null,
+            modifier = Modifier.size(40.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f),
+        )
+        Text(
+            text =
+                if (isSearching &&
+                    query.isNotBlank()
+                ) {
+                    "未找到「$query」"
+                } else {
+                    "暂无应用"
+                },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        )
     }
 }
 
@@ -339,7 +421,7 @@ fun AppInfoItem(
     isAllowed: Boolean,
     onToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(20.dp)
+    shape: Shape = RoundedCornerShape(20.dp),
 ) {
     var expanded by remember { mutableStateOf(false) }
     var isOverflown by remember { mutableStateOf(false) }
@@ -351,18 +433,22 @@ fun AppInfoItem(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isAllowed)
-                allowedColor.copy(alpha = 0.18f)
-            else
-                defaultColor.copy(alpha = 0.04f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (isAllowed) {
+                        allowedColor.copy(alpha = 0.18f)
+                    } else {
+                        defaultColor.copy(alpha = 0.04f)
+                    },
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
@@ -371,18 +457,20 @@ fun AppInfoItem(
             ) {
                 AppIcon(
                     packageName = app.packageName,
-                    modifier = Modifier
-                        .size(40.dp) 
-                        .clip(RoundedCornerShape(8.dp))
+                    modifier =
+                        Modifier
+                            .size(40.dp)
+                            .clip(RoundedCornerShape(8.dp)),
                 )
 
                 if (isAllowed) {
                     Box(
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .offset(x = 2.dp, y = 2.dp)
-                            .size(14.dp)
-                            .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        modifier =
+                            Modifier
+                                .align(Alignment.BottomEnd)
+                                .offset(x = 2.dp, y = 2.dp)
+                                .size(14.dp)
+                                .background(MaterialTheme.colorScheme.primary, CircleShape),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -398,17 +486,20 @@ fun AppInfoItem(
             Spacer(Modifier.width(14.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-                    .let { mod ->
-                        if (isOverflown || expanded)
-                            mod.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { expanded = !expanded }
-                        else mod
-                    },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                        .let { mod ->
+                            if (isOverflown || expanded) {
+                                mod.clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) { expanded = !expanded }
+                            } else {
+                                mod
+                            }
+                        },
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -460,23 +551,35 @@ fun AppInfoItem(
                     haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                     onToggle(it)
                 },
-                thumbContent = if (isAllowed) {
-                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                } else null,
+                thumbContent =
+                    if (isAllowed) {
+                        { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                    } else {
+                        null
+                    },
             )
         }
     }
 }
 
 @Composable
-fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
+fun AppIcon(
+    packageName: String,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                context.packageManager.getApplicationIcon(packageName).toBitmap().asImageBitmap()
-            } catch (_: Exception) { null }
-        }
+        value =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.packageManager
+                        .getApplicationIcon(packageName)
+                        .toBitmap()
+                        .asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
+            }
     }
     if (iconBitmap != null) {
         Image(bitmap = iconBitmap!!, contentDescription = null, modifier = modifier)
