@@ -351,8 +351,6 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                         }
 
                         if (otherList.isNotEmpty()) {
-                            item { SectionLabel("其他应用  ·  ${otherList.size}") }
-                            item { Spacer(Modifier.height(8.dp)) } 
                             itemsIndexed(otherList, key = { _, it -> it.packageName }) { index, app ->
                                 AppInfoItem(
                                     app = app,
