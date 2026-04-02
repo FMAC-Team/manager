@@ -46,6 +46,11 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        val items by lazy { listOf(Home, History, FmacRules, Settings) }
+        fun items(showRules: Boolean): List<BottomNavItem> = buildList {
+            add(Home)
+            add(History)
+            if (showRules) add(FmacRules)
+            add(Settings)
+        }
     }
 }

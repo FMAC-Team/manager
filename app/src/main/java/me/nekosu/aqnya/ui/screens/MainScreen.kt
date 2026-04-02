@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -43,6 +42,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -67,9 +67,13 @@ import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
+import me.nekosu.aqnya.util.DebugPreferences
 
 @Composable
-fun BottomNavigationBar(navController: NavController) {
+fun BottomNavigationBar(
+    navController: NavController,
+    items: List<BottomNavItem>,
+) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
@@ -96,7 +100,7 @@ fun BottomNavigationBar(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                BottomNavItem.items.forEach { item ->
+                items.forEach { item ->
                     val selected = currentRoute == item.route
 
                     val containerColor by animateColorAsState(
@@ -181,10 +185,20 @@ fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
     var showKeyDialog by remember { mutableStateOf(false) }
+    val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
+    val navItems = remember(showRules) { BottomNavItem.items(showRules) }
 
     LaunchedEffect(Unit) {
         if (!KeyUtils.checkKeyExists(context)) {
             showKeyDialog = true
+        }
+    }
+
+    LaunchedEffect(showRules) {
+        if (!showRules &&
+            navController.currentBackStackEntry?.destination?.route == BottomNavItem.FmacRules.route
+        ) {
+            navController.popBackStack()
         }
     }
 
@@ -218,13 +232,15 @@ fun MainScreen() {
                     popExitTransition = { fadeOut(commonTween) },
                 ) { HistoryScreen() }
 
-                composable(
-                    route = BottomNavItem.FmacRules.route,
-                    enterTransition = { fadeIn(commonTween) },
-                    exitTransition = { fadeOut(commonTween) },
-                    popEnterTransition = { fadeIn(commonTween) },
-                    popExitTransition = { fadeOut(commonTween) },
-                ) { RulesScreen() }
+                if (showRules) {
+                    composable(
+                        route = BottomNavItem.FmacRules.route,
+                        enterTransition = { fadeIn(commonTween) },
+                        exitTransition = { fadeOut(commonTween) },
+                        popEnterTransition = { fadeIn(commonTween) },
+                        popExitTransition = { fadeOut(commonTween) },
+                    ) { RulesScreen() }
+                }
 
                 composable(
                     route = BottomNavItem.Settings.route,
@@ -245,7 +261,15 @@ fun MainScreen() {
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
                 ) { OpenSourceScreen(navController) }
+                
+                                 composable(
+                    route ="debug_settings",
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) },
+            ) { DebugSettingsScreen(navController)  }
+
             }
+            
 
             KeyInputDialog(
                 show = showKeyDialog,
@@ -254,10 +278,8 @@ fun MainScreen() {
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
-            Box(
-                modifier = Modifier.align(Alignment.BottomCenter),
-            ) {
-                BottomNavigationBar(navController)
+            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                BottomNavigationBar(navController, navItems)
             }
         }
     }
@@ -313,19 +335,14 @@ fun KeyInputDialog(
                         isError = errorType != 0,
                         supportingText = {
                             when (errorType) {
-                                1 -> {
-                                    Text(
-                                        stringResource(R.string.dialog_key_input_no_empty),
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
-
-                                2 -> {
-                                    Text(
-                                        stringResource(R.string.dialog_key_input_invalid),
-                                        color = MaterialTheme.colorScheme.error,
-                                    )
-                                }
+                                1 -> Text(
+                                    stringResource(R.string.dialog_key_input_no_empty),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                                2 -> Text(
+                                    stringResource(R.string.dialog_key_input_invalid),
+                                    color = MaterialTheme.colorScheme.error,
+                                )
                             }
                         },
                     )
@@ -335,12 +352,11 @@ fun KeyInputDialog(
                 Button(
                     onClick = {
                         val trimmedKey = inputText.trim()
-                        errorType =
-                            when {
-                                trimmedKey.isBlank() -> 1
-                                !KeyUtils.isValidECCKey(trimmedKey) -> 2
-                                else -> 0
-                            }
+                        errorType = when {
+                            trimmedKey.isBlank() -> 1
+                            !KeyUtils.isValidECCKey(trimmedKey) -> 2
+                            else -> 0
+                        }
                         if (errorType == 0) {
                             KeyUtils.saveKey(context, trimmedKey)
                             onDismiss()

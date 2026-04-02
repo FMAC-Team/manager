@@ -13,32 +13,44 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.launch
 import me.nekosu.aqnya.R
+import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.utils.LogUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
     val mContext = LocalContext.current
-
+    val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
+    val showRules by DebugPreferences.showRulesFlow(mContext).collectAsState(initial = false)
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -63,9 +75,7 @@ fun SettingsScreen(navController: NavController) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            navController.navigate("about")
-                        },
+                        .clickable { navController.navigate("about") },
                 leadingContent = {
                     Icon(
                         imageVector = Icons.Outlined.Info,
@@ -84,10 +94,10 @@ fun SettingsScreen(navController: NavController) {
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .clickable {
-                            LogUtils.exportLogs(mContext)
-                        },
-                leadingContent = { Icon(Icons.Outlined.BugReport, contentDescription = null) },
+                        .clickable { LogUtils.exportLogs(mContext) },
+                leadingContent = {
+                    Icon(Icons.Outlined.BugReport, contentDescription = null)
+                },
                 headlineContent = {
                     Text(
                         text = stringResource(R.string.export_log),
@@ -99,6 +109,21 @@ fun SettingsScreen(navController: NavController) {
                 },
             )
 
+ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { navController.navigate("debug_settings") },
+                leadingContent = { Icon(Icons.Outlined.Science, contentDescription = null) },
+                headlineContent = {
+                    Text(
+                        text = "Debug Settings",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
+                supportingContent = { Text("开发者调试选项") },
+                trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) }
+            )
+
             Spacer(modifier = Modifier.weight(1f))
         }
     }
@@ -107,7 +132,5 @@ fun SettingsScreen(navController: NavController) {
 @Preview(showBackground = true)
 @Composable
 fun SettingsScreenPreview() {
-    SettingsScreen(
-        navController = rememberNavController(),
-    )
+    SettingsScreen(navController = rememberNavController())
 }
