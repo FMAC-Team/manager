@@ -139,7 +139,7 @@ fun HomeScreen() {
                 },
             )
 
-            Row(
+     /*       Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -154,7 +154,7 @@ fun HomeScreen() {
                     modifier = Modifier.weight(1f),
                 )
             }
-
+*/
             DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
