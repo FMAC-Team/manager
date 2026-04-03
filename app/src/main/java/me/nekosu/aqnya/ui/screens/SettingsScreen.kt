@@ -41,7 +41,7 @@ import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.DebugPreferences
-import me.nekosu.aqnya.utils.LogUtils
+import me.nekosu.aqnya.util.LogUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,4 +1,4 @@
-package me.nekosu.aqnya.utils
+package me.nekosu.aqnya.util
 
 import android.content.ClipData
 import android.content.Context
