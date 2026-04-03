@@ -6,12 +6,10 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -65,9 +63,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
+import me.nekosu.aqnya.util.AppPermission
 import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
 import me.nekosu.aqnya.util.DebugPreferences
+import me.nekosu.aqnya.util.MiuiPermissionUtils
+import me.nekosu.aqnya.util.rememberPermissionState
 
 @Composable
 fun BottomNavigationBar(
@@ -188,9 +189,16 @@ fun MainScreen() {
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
     val navItems = remember(showRules) { BottomNavItem.items(showRules) }
 
+    val miuiAppsPermState = rememberPermissionState(AppPermission.MIUI_GET_INSTALLED_APPS)
+
     LaunchedEffect(Unit) {
         if (!KeyUtils.checkKeyExists(context)) {
             showKeyDialog = true
+        }
+        if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
+            !MiuiPermissionUtils.isGranted(context)
+        ) {
+            miuiAppsPermState.launchRequest()
         }
     }
 
@@ -232,14 +240,13 @@ fun MainScreen() {
                     popExitTransition = { fadeOut(commonTween) },
                 ) { HistoryScreen() }
 
-                    composable(
-                        route = BottomNavItem.FmacRules.route,
-                        enterTransition = { fadeIn(commonTween) },
-                        exitTransition = { fadeOut(commonTween) },
-                        popEnterTransition = { fadeIn(commonTween) },
-                        popExitTransition = { fadeOut(commonTween) },
-                    ) { RulesScreen() }
-                
+                composable(
+                    route = BottomNavItem.FmacRules.route,
+                    enterTransition = { fadeIn(commonTween) },
+                    exitTransition = { fadeOut(commonTween) },
+                    popEnterTransition = { fadeIn(commonTween) },
+                    popExitTransition = { fadeOut(commonTween) },
+                ) { RulesScreen() }
 
                 composable(
                     route = BottomNavItem.Settings.route,
@@ -260,15 +267,13 @@ fun MainScreen() {
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
                 ) { OpenSourceScreen(navController) }
-                
-                 composable(
-                    route ="debug_settings",
+
+                composable(
+                    route = "debug_settings",
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
-            ) { DebugSettingsScreen(navController)  }
-
+                ) { DebugSettingsScreen(navController) }
             }
-            
 
             KeyInputDialog(
                 show = showKeyDialog,
