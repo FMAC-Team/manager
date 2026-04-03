@@ -10,6 +10,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -191,6 +193,19 @@ fun MainScreen() {
 
     val miuiAppsPermState = rememberPermissionState(AppPermission.MIUI_GET_INSTALLED_APPS)
 
+    val topLevelRoutes = remember {
+        setOf(
+            BottomNavItem.Home.route,
+            BottomNavItem.History.route,
+            BottomNavItem.FmacRules.route,
+            BottomNavItem.Settings.route,
+        )
+    }
+
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+    val showBottomBar = currentRoute in topLevelRoutes
+
     LaunchedEffect(Unit) {
         if (!KeyUtils.checkKeyExists(context)) {
             showKeyDialog = true
@@ -282,7 +297,12 @@ fun MainScreen() {
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
-            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            AnimatedVisibility(
+                visible = showBottomBar,
+                enter = fadeIn(tween(200)) + slideInVertically { it },
+                exit = fadeOut(tween(150)) + slideOutVertically { it },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            ) {
                 BottomNavigationBar(navController, navItems)
             }
         }
