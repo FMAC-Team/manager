@@ -232,7 +232,6 @@ fun MainScreen() {
                     popExitTransition = { fadeOut(commonTween) },
                 ) { HistoryScreen() }
 
-                if (showRules) {
                     composable(
                         route = BottomNavItem.FmacRules.route,
                         enterTransition = { fadeIn(commonTween) },
@@ -240,7 +239,7 @@ fun MainScreen() {
                         popEnterTransition = { fadeIn(commonTween) },
                         popExitTransition = { fadeOut(commonTween) },
                     ) { RulesScreen() }
-                }
+                
 
                 composable(
                     route = BottomNavItem.Settings.route,
@@ -262,7 +261,7 @@ fun MainScreen() {
                     exitTransition = { fadeOut(commonTween) },
                 ) { OpenSourceScreen(navController) }
                 
-                                 composable(
+                 composable(
                     route ="debug_settings",
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
