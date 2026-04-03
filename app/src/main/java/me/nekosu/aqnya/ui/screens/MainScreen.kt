@@ -339,14 +339,19 @@ fun KeyInputDialog(
                         isError = errorType != 0,
                         supportingText = {
                             when (errorType) {
-                                1 -> Text(
-                                    stringResource(R.string.dialog_key_input_no_empty),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
-                                2 -> Text(
-                                    stringResource(R.string.dialog_key_input_invalid),
-                                    color = MaterialTheme.colorScheme.error,
-                                )
+                                1 -> {
+                                    Text(
+                                        stringResource(R.string.dialog_key_input_no_empty),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
+
+                                2 -> {
+                                    Text(
+                                        stringResource(R.string.dialog_key_input_invalid),
+                                        color = MaterialTheme.colorScheme.error,
+                                    )
+                                }
                             }
                         },
                     )
@@ -356,11 +361,12 @@ fun KeyInputDialog(
                 Button(
                     onClick = {
                         val trimmedKey = inputText.trim()
-                        errorType = when {
-                            trimmedKey.isBlank() -> 1
-                            !KeyUtils.isValidECCKey(trimmedKey) -> 2
-                            else -> 0
-                        }
+                        errorType =
+                            when {
+                                trimmedKey.isBlank() -> 1
+                                !KeyUtils.isValidECCKey(trimmedKey) -> 2
+                                else -> 0
+                            }
                         if (errorType == 0) {
                             KeyUtils.saveKey(context, trimmedKey)
                             onDismiss()

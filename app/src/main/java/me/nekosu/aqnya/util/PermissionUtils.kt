@@ -24,7 +24,7 @@ enum class AppPermission(
 ) {
     POST_NOTIFICATIONS(
         manifest = Manifest.permission.POST_NOTIFICATIONS,
-        minSdk = Build.VERSION_CODES.TIRAMISU,   // Android 13+
+        minSdk = Build.VERSION_CODES.TIRAMISU, // Android 13+
     ),
     READ_MEDIA_IMAGES(
         manifest = Manifest.permission.READ_MEDIA_IMAGES,
@@ -45,47 +45,57 @@ enum class AppPermission(
 }
 
 object PermissionUtils {
-    fun isGranted(context: Context, permission: AppPermission): Boolean {
+    fun isGranted(
+        context: Context,
+        permission: AppPermission,
+    ): Boolean {
         if (!permission.isApplicable) return true
         return ContextCompat.checkSelfPermission(
-            context, permission.manifest
+            context,
+            permission.manifest,
         ) == PackageManager.PERMISSION_GRANTED
     }
 
-    fun allGranted(context: Context, permissions: Collection<AppPermission>): Boolean =
-        permissions.all { isGranted(context, it) }
+    fun allGranted(
+        context: Context,
+        permissions: Collection<AppPermission>,
+    ): Boolean = permissions.all { isGranted(context, it) }
 
     fun deniedPermissions(
         context: Context,
         permissions: Collection<AppPermission>,
     ): List<AppPermission> = permissions.filter { !isGranted(context, it) }
 
-    fun isPermanentlyDenied(activity: Activity, permission: AppPermission): Boolean {
+    fun isPermanentlyDenied(
+        activity: Activity,
+        permission: AppPermission,
+    ): Boolean {
         if (!permission.isApplicable) return false
-        return !activity.shouldShowRequestPermissionRationale(permission.manifest)
-            && !isGranted(activity, permission)
+        return !activity.shouldShowRequestPermissionRationale(permission.manifest) &&
+            !isGranted(activity, permission)
     }
 
     fun openAppSettings(context: Context) {
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", context.packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        val intent =
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.fromParts("package", context.packageName, null)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         context.startActivity(intent)
     }
 }
 
 object MiuiPermissionUtils {
-
     private const val PERMISSION = "com.android.permission.GET_INSTALLED_APPS"
     private const val MIUI_SECURITY_PKG = "com.lbe.security.miui"
 
-    fun isSupportedOnThisDevice(context: Context): Boolean = try {
-        val info = context.packageManager.getPermissionInfo(PERMISSION, 0)
-        info.packageName == MIUI_SECURITY_PKG
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    }
+    fun isSupportedOnThisDevice(context: Context): Boolean =
+        try {
+            val info = context.packageManager.getPermissionInfo(PERMISSION, 0)
+            info.packageName == MIUI_SECURITY_PKG
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
 
     fun isGranted(context: Context): Boolean {
         if (!isSupportedOnThisDevice(context)) return true
@@ -103,7 +113,7 @@ class PermissionState(
 
     var isPermanentlyDenied by mutableStateOf(false)
         internal set
-     
+
     var launchRequest: () -> Unit = {}
         internal set
 }
@@ -115,24 +125,26 @@ fun rememberPermissionState(
 ): PermissionState {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    val state = remember(permission) {
-        PermissionState(
-            permission = permission,
-            initialGranted = PermissionUtils.isGranted(context, permission),
-        )
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) { granted ->
-        state.isGranted = granted
-        if (!granted) {
-            state.isPermanentlyDenied =
-                !PermissionUtils.isGranted(context, permission) &&
-                !(context as? Activity)?.shouldShowRequestPermissionRationale(permission.manifest)!!
+    val state =
+        remember(permission) {
+            PermissionState(
+                permission = permission,
+                initialGranted = PermissionUtils.isGranted(context, permission),
+            )
         }
-        onResult(granted)
-    }
+
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestPermission(),
+        ) { granted ->
+            state.isGranted = granted
+            if (!granted) {
+                state.isPermanentlyDenied =
+                    !PermissionUtils.isGranted(context, permission) &&
+                    !(context as? Activity)?.shouldShowRequestPermissionRationale(permission.manifest)!!
+            }
+            onResult(granted)
+        }
 
     LaunchedEffect(permission) {
         state.launchRequest = { if (!state.isGranted) launcher.launch(permission.manifest) }
@@ -164,28 +176,33 @@ fun rememberMultiplePermissionsState(
 ): MultiplePermissionsState {
     val context = androidx.compose.ui.platform.LocalContext.current
 
-    val applicablePermissions = remember(permissions) {
-        permissions.filter { it.isApplicable }
-    }
-
-    val state = remember(permissions) {
-        MultiplePermissionsState(
-            permissions = applicablePermissions,
-            initialGranted = applicablePermissions.associateWith {
-                PermissionUtils.isGranted(context, it)
-            },
-        )
-    }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions(),
-    ) { results ->
-        val mapped = results.entries.associate { (manifest, granted) ->
-            applicablePermissions.first { it.manifest == manifest } to granted
+    val applicablePermissions =
+        remember(permissions) {
+            permissions.filter { it.isApplicable }
         }
-        state.statuses = mapped
-        onResult(mapped)
-    }
+
+    val state =
+        remember(permissions) {
+            MultiplePermissionsState(
+                permissions = applicablePermissions,
+                initialGranted =
+                    applicablePermissions.associateWith {
+                        PermissionUtils.isGranted(context, it)
+                    },
+            )
+        }
+
+    val launcher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.RequestMultiplePermissions(),
+        ) { results ->
+            val mapped =
+                results.entries.associate { (manifest, granted) ->
+                    applicablePermissions.first { it.manifest == manifest } to granted
+                }
+            state.statuses = mapped
+            onResult(mapped)
+        }
 
     LaunchedEffect(permissions) {
         state.launchRequest = {

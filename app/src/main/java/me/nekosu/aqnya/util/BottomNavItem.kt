@@ -46,11 +46,12 @@ sealed class BottomNavItem(
     )
 
     companion object {
-        fun items(showRules: Boolean): List<BottomNavItem> = buildList {
-            add(Home)
-            add(History)
-            if (showRules) add(FmacRules)
-            add(Settings)
-        }
+        fun items(showRules: Boolean): List<BottomNavItem> =
+            buildList {
+                add(Home)
+                add(History)
+                if (showRules) add(FmacRules)
+                add(Settings)
+            }
     }
 }

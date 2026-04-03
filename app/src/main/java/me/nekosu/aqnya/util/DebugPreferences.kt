@@ -14,10 +14,12 @@ val Context.debugDataStore: DataStore<Preferences> by preferencesDataStore(name 
 object DebugPreferences {
     val KEY_SHOW_RULES = booleanPreferencesKey("debug_show_rules")
 
-    fun showRulesFlow(context: Context): Flow<Boolean> =
-        context.debugDataStore.data.map { it[KEY_SHOW_RULES] ?: false }
+    fun showRulesFlow(context: Context): Flow<Boolean> = context.debugDataStore.data.map { it[KEY_SHOW_RULES] ?: false }
 
-    suspend fun setShowRules(context: Context, value: Boolean) {
+    suspend fun setShowRules(
+        context: Context,
+        value: Boolean,
+    ) {
         context.debugDataStore.edit { it[KEY_SHOW_RULES] = value }
     }
 }

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,8 +35,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.material.icons.outlined.BugReport
-import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -109,10 +108,11 @@ fun SettingsScreen(navController: NavController) {
                 },
             )
 
-ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { navController.navigate("debug_settings") },
+            ListItem(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate("debug_settings") },
                 leadingContent = { Icon(Icons.Outlined.Science, contentDescription = null) },
                 headlineContent = {
                     Text(
@@ -121,7 +121,7 @@ ListItem(
                     )
                 },
                 supportingContent = { Text("开发者调试选项") },
-                trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) }
+                trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
             )
 
             Spacer(modifier = Modifier.weight(1f))
