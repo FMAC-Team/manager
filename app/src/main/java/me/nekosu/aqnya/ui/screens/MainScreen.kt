@@ -193,14 +193,15 @@ fun MainScreen() {
 
     val miuiAppsPermState = rememberPermissionState(AppPermission.MIUI_GET_INSTALLED_APPS)
 
-    val topLevelRoutes = remember {
-        setOf(
-            BottomNavItem.Home.route,
-            BottomNavItem.History.route,
-            BottomNavItem.FmacRules.route,
-            BottomNavItem.Settings.route,
-        )
-    }
+    val topLevelRoutes =
+        remember {
+            setOf(
+                BottomNavItem.Home.route,
+                BottomNavItem.History.route,
+                BottomNavItem.FmacRules.route,
+                BottomNavItem.Settings.route,
+            )
+        }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
