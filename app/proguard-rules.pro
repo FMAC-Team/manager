@@ -39,3 +39,9 @@
 # Gson
 -keep class com.google.gson.reflect.TypeToken { *; }
 -keep class * extends com.google.gson.reflect.TypeToken
+
+
+-keep class me.nekosu.aqnya.KeyUtils {
+    public static me.nekosu.aqnya.KeyUtils INSTANCE;
+    public byte[] loadKeyBytes(android.content.Context);
+}
