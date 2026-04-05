@@ -12,8 +12,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -222,7 +222,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
             AnimatedContent(
                 targetState = isSearching,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
-                label = "topBarSwitch"
+                label = "topBarSwitch",
             ) { searching ->
                 if (searching) {
                     TopAppBar(
@@ -239,24 +239,25 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                 placeholder = {
                                     Text(
                                         "搜索应用…",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                                     )
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                    ),
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
                                         IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, contentDescription = "清空") }
                                     }
-                                }
+                                },
                             )
-                        }
+                        },
                     )
                 } else {
                     TopAppBar(
@@ -284,11 +285,12 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                                     fontWeight = if (mode == filterMode) FontWeight.SemiBold else FontWeight.Normal,
                                                 )
                                             },
-                                            leadingIcon = if (mode == filterMode) {
-                                                { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
-                                            } else {
-                                                null
-                                            },
+                                            leadingIcon =
+                                                if (mode == filterMode) {
+                                                    { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
+                                                } else {
+                                                    null
+                                                },
                                             onClick = {
                                                 filterMode = mode
                                                 menuExpanded = false
@@ -297,7 +299,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                                     }
                                 }
                             }
-                        }
+                        },
                     )
                 }
             }
@@ -322,7 +324,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                     state = refreshState,
                     color = MaterialTheme.colorScheme.primary,
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    threshold = 40.dp
+                    threshold = 40.dp,
                 )
             },
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp),

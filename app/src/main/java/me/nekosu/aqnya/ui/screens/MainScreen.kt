@@ -265,7 +265,7 @@ fun MainScreen() {
                                     saveState = true
                                 }
                             }
-                        }
+                        },
                     )
                 }
 
