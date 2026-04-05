@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -174,6 +179,7 @@ fun getAdapterShape(
 fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
     val context = LocalContext.current.applicationContext
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
+    val listState = rememberLazyListState()
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var filterMode by remember { mutableStateOf(FilterMode.USER) }
     var searchQuery by remember { mutableStateOf("") }
@@ -181,16 +187,9 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
     var isSearching by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val refreshState = rememberPullToRefreshState()
 
-    val infiniteTransition = rememberInfiniteTransition(label = "refresh")
-    val infiniteAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(tween(700, easing = LinearEasing)),
-        label = "refreshSpin",
-    )
-    val refreshRotation = if (isRefreshing) infiniteAngle else 0f
-
+    LaunchedEffect(searchQuery) { listState.scrollToItem(0) }
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
     val sortSnapshotAllowed = remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -220,101 +219,112 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    AnimatedContent(targetState = isSearching, label = "titleSwitch") { searching ->
-                        if (searching) {
+            AnimatedContent(
+                targetState = isSearching,
+                transitionSpec = { fadeIn() togetherWith fadeOut() },
+                label = "topBarSwitch"
+            ) { searching ->
+                if (searching) {
+                    TopAppBar(
+                        navigationIcon = {
+                            IconButton(onClick = {
+                                isSearching = false
+                                searchQuery = ""
+                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+                        },
+                        title = {
                             TextField(
                                 value = searchQuery,
                                 onValueChange = { searchQuery = it },
-                                placeholder = { Text("搜索应用…", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                                placeholder = {
+                                    Text(
+                                        "搜索应用…",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                                    )
+                                },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                colors =
-                                    TextFieldDefaults.colors(
-                                        focusedContainerColor = Color.Transparent,
-                                        unfocusedContainerColor = Color.Transparent,
-                                        focusedIndicatorColor = Color.Transparent,
-                                        unfocusedIndicatorColor = Color.Transparent,
-                                    ),
+                                colors = TextFieldDefaults.colors(
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                ),
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Default.Clear, contentDescription = "清空") }
+                                    }
+                                }
                             )
-                        } else {
+                        }
+                    )
+                } else {
+                    TopAppBar(
+                        title = {
                             Text(
                                 text = stringResource(filterMode.labelRes),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.Bold,
                             )
-                        }
-                    }
-                },
-                navigationIcon = {
-                    if (isSearching) {
-                        IconButton(onClick = {
-                            isSearching = false
-                            searchQuery = ""
-                        }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
-                        }
-                    }
-                },
-                actions = {
-                    if (!isSearching) {
-                        IconButton(onClick = { isSearching = true }) { Icon(Icons.Default.Search, null) }
-                        IconButton(onClick = {
-                            if (!isRefreshing) {
-                                isRefreshing = true
-                                scope.launch {
-                                    viewModel.loadApps(forceRefresh = true)
-                                    isRefreshing = false
+                        },
+                        actions = {
+                            IconButton(onClick = { isSearching = true }) { Icon(Icons.Default.Search, null) }
+                            Box {
+                                IconButton(onClick = { menuExpanded = true }) { Icon(Icons.Default.FilterList, null) }
+                                DropdownMenu(
+                                    expanded = menuExpanded,
+                                    onDismissRequest = { menuExpanded = false },
+                                    shape = RoundedCornerShape(20.dp),
+                                ) {
+                                    FilterMode.entries.forEach { mode ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    stringResource(mode.labelRes),
+                                                    fontWeight = if (mode == filterMode) FontWeight.SemiBold else FontWeight.Normal,
+                                                )
+                                            },
+                                            leadingIcon = if (mode == filterMode) {
+                                                { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
+                                            } else {
+                                                null
+                                            },
+                                            onClick = {
+                                                filterMode = mode
+                                                menuExpanded = false
+                                            },
+                                        )
+                                    }
                                 }
                             }
-                        }) {
-                            Icon(Icons.Default.Refresh, null, modifier = Modifier.rotate(refreshRotation))
                         }
-                    }
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }) { Icon(Icons.Default.FilterList, null) }
-                        DropdownMenu(
-                            expanded = menuExpanded,
-                            onDismissRequest = { menuExpanded = false },
-                            shape = RoundedCornerShape(20.dp),
-                        ) {
-                            FilterMode.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            stringResource(mode.labelRes),
-                                            fontWeight =
-                                                if (mode ==
-                                                    filterMode
-                                                ) {
-                                                    FontWeight.SemiBold
-                                                } else {
-                                                    FontWeight.Normal
-                                                },
-                                        )
-                                    },
-                                    leadingIcon =
-                                        if (mode ==
-                                            filterMode
-                                        ) {
-                                            { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
-                                        } else {
-                                            null
-                                        },
-                                    onClick = {
-                                        filterMode = mode
-                                        menuExpanded = false
-                                    },
-                                )
-                            }
-                        }
-                    }
-                },
-            )
+                    )
+                }
+            }
         },
     ) { innerPadding ->
-        Box(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                if (!isRefreshing) {
+                    isRefreshing = true
+                    scope.launch {
+                        viewModel.loadApps(forceRefresh = true)
+                        isRefreshing = false
+                    }
+                }
+            },
+            state = refreshState,
+            indicator = {
+                Indicator(
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    isRefreshing = isRefreshing,
+                    state = refreshState,
+                    color = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    threshold = 40.dp
+                )
+            },
             modifier = Modifier.fillMaxSize().padding(innerPadding).padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -332,6 +342,7 @@ fun HistoryScreen(extraBottomPadding: androidx.compose.ui.unit.Dp = 96.dp) {
                     val otherList = apps.filter { !viewModel.allowedApps.contains(it.packageName) }
 
                     LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),

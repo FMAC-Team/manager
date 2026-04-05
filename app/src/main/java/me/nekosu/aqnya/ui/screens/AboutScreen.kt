@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -120,7 +121,7 @@ fun AboutScreen(navController: NavHostController) {
                     contentDescription = null,
                     modifier =
                         Modifier
-                            .size(90.dp)
+                            .size(85.dp)
                             .clip(RoundedCornerShape(16.dp)),
                 )
             }

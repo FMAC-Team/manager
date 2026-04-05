@@ -246,7 +246,28 @@ fun MainScreen() {
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
-                ) { HomeScreen() }
+                ) {
+                    HomeScreen(
+                        onNavigateToApps = {
+                            navController.navigate(BottomNavItem.History.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        },
+                        onNavigateToRules = {
+                            navController.navigate(BottomNavItem.FmacRules.route) {
+                                launchSingleTop = true
+                                restoreState = true
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                            }
+                        }
+                    )
+                }
 
                 composable(
                     route = BottomNavItem.History.route,

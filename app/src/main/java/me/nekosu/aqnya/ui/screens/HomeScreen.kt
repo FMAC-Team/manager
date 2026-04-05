@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
@@ -29,6 +31,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +48,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
@@ -59,6 +63,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.ncore
+import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.RootDbHelper
 import me.nekosu.aqnya.util.RuleDbHelper
 import me.nekosu.aqnya.util.getAppVersion
@@ -71,12 +76,16 @@ enum class InstallStatus {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(
+    onNavigateToApps: () -> Unit = {},
+    onNavigateToRules: () -> Unit = {},
+) {
     val context = LocalContext.current
     var showInstallSheet by remember { mutableStateOf(false) }
     var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
     var suCount by remember { mutableIntStateOf(0) }
     var ruleCount by remember { mutableIntStateOf(0) }
+    val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
 
     LaunchedEffect(Unit) {
         installStatus =
@@ -107,7 +116,7 @@ fun HomeScreen() {
             TopAppBar(
                 title = {
                     Text(
-                        text = "nekosu",
+                        text = "NekoSU",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
@@ -125,7 +134,9 @@ fun HomeScreen() {
                 Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatusCard(
@@ -139,7 +150,7 @@ fun HomeScreen() {
                 },
             )
 
-     /*       Row(
+            Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -147,14 +158,17 @@ fun HomeScreen() {
                     label = "超级用户",
                     value = if (installStatus == InstallStatus.CHECKING) "—" else suCount.toString(),
                     modifier = Modifier.weight(1f),
+                    onClick = onNavigateToApps,
                 )
-                StatCard(
-                    label = "FMAC 规则",
-                    value = if (installStatus == InstallStatus.CHECKING) "—" else ruleCount.toString(),
-                    modifier = Modifier.weight(1f),
-                )
+                if (showRules) {
+                    StatCard(
+                        label = "FMAC 规则",
+                        value = if (installStatus == InstallStatus.CHECKING) "—" else ruleCount.toString(),
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToRules,
+                    )
+                }
             }
-*/
             DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
@@ -164,19 +178,22 @@ fun HomeScreen() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    onClick: () -> Unit = {},
 ) {
     Card(
         modifier = modifier,
+        onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
             ),
     ) {
         Column(
@@ -206,16 +223,16 @@ fun StatusCard(
     status: InstallStatus,
     onClick: () -> Unit,
 ) {
-    val glassColor =
+    val containerColor =
         when (status) {
-            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
-            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
-            InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primaryContainer
+            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.errorContainer
+            InstallStatus.CHECKING -> MaterialTheme.colorScheme.surfaceVariant
         }
     val contentColor =
         when (status) {
-            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primary
-            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.error
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.onPrimaryContainer
+            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.onErrorContainer
             InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
         }
     val iconVector =
@@ -248,7 +265,7 @@ fun StatusCard(
             onClick = onClick,
             colors =
                 CardDefaults.cardColors(
-                    containerColor = glassColor.copy(alpha = 0.08f),
+                    containerColor = containerColor.copy(alpha = 0.85f),
                 ),
             shape = RoundedCornerShape(28.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -267,7 +284,7 @@ fun StatusCard(
                         Modifier
                             .size(50.dp)
                             .background(
-                                color = glassColor.copy(alpha = 0.15f),
+                                color = contentColor.copy(alpha = 0.25f),
                                 shape = CircleShape,
                             ),
                 ) {
@@ -309,7 +326,7 @@ fun StatusCard(
                         Modifier
                             .size(30.dp)
                             .background(
-                                color = glassColor.copy(alpha = 0.12f),
+                                color = contentColor.copy(alpha = 0.25f),
                                 shape = CircleShape,
                             ),
                 ) {
@@ -371,7 +388,7 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             colors =
                 CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
                 ),
         ) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -385,7 +402,7 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 20.dp),
                             thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                            color = MaterialTheme.colorScheme.outlineVariant,
                         )
                     }
                 }
@@ -414,14 +431,14 @@ fun DeviceInfoItem(
                 Modifier
                     .size(38.dp)
                     .background(
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f),
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
                         shape = RoundedCornerShape(11.dp),
                     ),
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(20.dp),
             )
         }
