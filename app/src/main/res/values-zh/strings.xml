@@ -12,9 +12,7 @@
     <string name="close_search">关闭</string>
     <string name="search_hint">搜索应用或包名</string>
     <string name="no_app_found">未找到应用</string>
-    <string name="sig_check_failed">
-        签名校验失败，可能被篡改或非官方应用，退出
-    </string>
+    <string name="sig_check_failed">签名校验失败，可能被篡改或非官方应用，退出</string>
     <string name="settings_title">设置</string>
     <string name="about">关于</string>
     <string name="dialog_key_title">设置密钥</string>
@@ -24,7 +22,11 @@
     <string name="dialog_key_save">保存</string>
     <string name="dialog_key_later">稍候设置</string>
     <string name="dialog_key_please_input">请输入 OpenSSL 生成的椭圆曲线私钥 (PEM 格式):</string>
-     <string name="dialog_key_set">配置 ECC 密钥</string>
+    <string name="dialog_key_set">配置 ECC 密钥</string>
     <string name="dialog_key_input_no_empty">错误：密钥不能为空</string>
-        <string name="dialog_key_input_invalid">错误：无效密钥格式</string>
+    <string name="dialog_key_input_invalid">错误：无效密钥格式</string>
+    <string name="theme_title">外观</string>
+    <string name="theme_system">跟随系统</string>
+    <string name="theme_light">浅色</string>
+    <string name="theme_dark">深色</string>
 </resources>

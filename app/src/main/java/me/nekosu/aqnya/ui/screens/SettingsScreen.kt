@@ -1,6 +1,8 @@
 package me.nekosu.aqnya.ui.screens
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -10,12 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Science
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -30,7 +39,11 @@ import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +57,16 @@ import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.LogUtils
 
+
+enum class ThemeMode(@StringRes val titleRes: Int, val value: Int) {
+    SYSTEM(R.string.theme_system, 0),
+    LIGHT(R.string.theme_light, 1),
+    DARK(R.string.theme_dark, 2);
+    companion object {
+        fun fromValue(value: Int) = entries.find { it.value == value } ?: SYSTEM
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(navController: NavController) {
@@ -51,6 +74,11 @@ fun SettingsScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
     val showRules by DebugPreferences.showRulesFlow(mContext).collectAsState(initial = false)
+
+    val themeValue by DebugPreferences.themeModeFlow(mContext).collectAsState(initial = 0)
+    val currentThemeMode = ThemeMode.fromValue(themeValue)
+    var themeMenuExpanded by remember { mutableStateOf(false) }
+
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -111,9 +139,7 @@ fun SettingsScreen(navController: NavController) {
 
             ListItem(
                 modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { navController.navigate("debug_settings") },
+                    Modifier.fillMaxWidth().clickable { navController.navigate("debug_settings") },
                 leadingContent = { Icon(Icons.Outlined.Science, contentDescription = null) },
                 headlineContent = {
                     Text(
@@ -124,11 +150,57 @@ fun SettingsScreen(navController: NavController) {
                 supportingContent = { Text("开发者调试选项") },
                 trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
             )
-
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { themeMenuExpanded = true },
+                leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
+                headlineContent = {
+                    Text(
+                        stringResource(R.string.theme_title),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                },
+                supportingContent = { Text(stringResource(currentThemeMode.titleRes)) },
+                trailingContent = {
+                    // 💡 绝杀：把 Box 放在 trailingContent 里！它现在绝对在最右边了！
+                    Box {
+                        // 你甚至可以在这里放个 Icon(Icons.Outlined.ChevronRight, null) 作为装饰
+                        DropdownMenu(
+                            expanded = themeMenuExpanded,
+                            onDismissRequest = { themeMenuExpanded = false },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            ThemeMode.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(mode.titleRes)) },
+                                    onClick = {
+                                        themeMenuExpanded = false
+                                        // 💾 点击时，存入 DataStore！
+                                        scope.launch {
+                                            DebugPreferences.setThemeMode(mContext, mode.value)
+                                        }
+                                    },
+                                    trailingIcon = {
+                                        if (currentThemeMode == mode) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            )
             Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable

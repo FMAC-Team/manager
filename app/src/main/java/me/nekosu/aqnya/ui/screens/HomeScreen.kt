@@ -53,8 +53,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -193,7 +195,7 @@ fun StatCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         colors =
             CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f),
             ),
     ) {
         Column(
@@ -221,18 +223,33 @@ fun StatCard(
 @Composable
 fun StatusCard(
     status: InstallStatus,
+    opacity: Float = 0.06f,
     onClick: () -> Unit,
 ) {
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+
+    val notInstalledContainerColor = if (isDark) {
+        MaterialTheme.colorScheme.errorContainer
+    } else {
+        MaterialTheme.colorScheme.error
+    }
+
+    val notInstalledContentColor = if (isDark) {
+        MaterialTheme.colorScheme.onErrorContainer
+    } else {
+        MaterialTheme.colorScheme.onError
+    }
+
     val containerColor =
         when (status) {
             InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primaryContainer
-            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.errorContainer
+            InstallStatus.NOT_INSTALLED -> notInstalledContainerColor
             InstallStatus.CHECKING -> MaterialTheme.colorScheme.surfaceVariant
         }
     val contentColor =
         when (status) {
             InstallStatus.INSTALLED -> MaterialTheme.colorScheme.onPrimaryContainer
-            InstallStatus.NOT_INSTALLED -> MaterialTheme.colorScheme.onErrorContainer
+            InstallStatus.NOT_INSTALLED -> notInstalledContentColor
             InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
         }
     val iconVector =
@@ -265,7 +282,7 @@ fun StatusCard(
             onClick = onClick,
             colors =
                 CardDefaults.cardColors(
-                    containerColor = containerColor.copy(alpha = 0.85f),
+                    containerColor = containerColor.copy(alpha = 0.75f),
                 ),
             shape = RoundedCornerShape(28.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -280,67 +297,96 @@ fun StatusCard(
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier =
-                        Modifier
-                            .size(50.dp)
+                    modifier = Modifier.size(50.dp)
                             .background(
-                                color = contentColor.copy(alpha = 0.25f),
+                                color = contentColor.copy(alpha = opacity),
                                 shape = CircleShape,
-                            ),
-                ) {
-                    if (status == InstallStatus.CHECKING) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = contentColor,
-                            strokeWidth = 2.5.dp,
-                        )
-                    } else {
-                        Icon(
-                            imageVector = iconVector,
-                            contentDescription = null,
-                            tint = contentColor,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                }
+                            )
+                            .drawBehind{
+                                val glowRadius = size.minDimension / 1.8f
+                                drawCircle (
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            contentColor.copy(alpha = 0.45f),
+                                            Color.Transparent ),
+                                        center = center,
+                                        radius = glowRadius
+                                    ),
+                                    radius = glowRadius
+                                )
+                            }
+                        .background(
+                            color = contentColor.copy(alpha = opacity),
+                            shape = CircleShape,
+                        ),
+                                ) {
+                                    if (status == InstallStatus.CHECKING) {
+                                        CircularProgressIndicator(
+                                            modifier = Modifier.size(24.dp),
+                                            color = contentColor,
+                                            strokeWidth = 2.5.dp,
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = iconVector,
+                                            contentDescription = null,
+                                            tint = contentColor,
+                                            modifier = Modifier.size(24.dp),
+                                        )
+                                    }
+                                }
 
-                Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        text = titleText,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = contentColor,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                    Text(
-                        text = subText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = contentColor.copy(alpha = 0.7f),
-                    )
-                }
+                                        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                    Text(
+                                        text = titleText,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        color = contentColor,
+                                        fontWeight = FontWeight.SemiBold,
+                                    )
+                                    Text(
+                                        text = subText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = contentColor.copy(alpha = 0.7f),
+                                    )
+                                }
 
-                Spacer(modifier = Modifier.weight(1f))
+                                        Spacer(modifier = Modifier.weight(1f))
 
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier =
-                        Modifier
-                            .size(30.dp)
-                            .background(
-                                color = contentColor.copy(alpha = 0.25f),
-                                shape = CircleShape,
-                            ),
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
-                        contentDescription = null,
-                        tint = contentColor.copy(alpha = 0.6f),
-                        modifier = Modifier.size(13.dp),
-                    )
-                }
+                                        Box(
+                                        contentAlignment = Alignment.Center,
+                                    modifier =
+                                        Modifier
+                                            .size(30.dp)
+                                            .background(
+                                                color = contentColor.copy(alpha = opacity),
+                                                shape = CircleShape,
+                                            )
+                                            .drawBehind{
+                                            val glowRadius = size.minDimension / 1.8f
+                                            drawCircle (
+                                                brush = Brush.radialGradient(
+                                                    colors = listOf(
+                                                        contentColor.copy(alpha = 0.35f),
+                                                        Color.Transparent ),
+                                                    center = center,
+                                                    radius = glowRadius
+                                                ),
+                                                radius = glowRadius
+                                            )
+                                        }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
+                                        contentDescription = null,
+                                        tint = contentColor.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(13.dp),
+                                    )
+                                }
+                            }
             }
         }
     }
-}
+
 
 data class StatusConfig(
     val containerColor: androidx.compose.ui.graphics.Color,

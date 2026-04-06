@@ -27,4 +27,9 @@
     <string name="dialog_key_set">set ecc private key</string>
     <string name="dialog_key_input_no_empty">error：key can’t be empty</string>
     <string name="dialog_key_input_invalid">error: Invalid elliptic curve key format</string>
+    <string name="theme_title">Appearance</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
 </resources>

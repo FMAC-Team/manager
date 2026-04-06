@@ -9,7 +9,10 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import me.nekosu.aqnya.util.DebugPreferences
 
 private val DarkColorScheme =
     darkColorScheme(
@@ -36,19 +39,24 @@ private val LightColorScheme =
 
 @Composable
 fun NekosuTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit,
 ) {
+    val context = LocalContext.current
+    val themePreference by DebugPreferences.themeModeFlow(context).collectAsState(initial = 0)
+    val isDarkTheme = when (themePreference) {
+        1 -> false
+        2 -> true
+        else -> isSystemInDarkTheme()
+    }
     val colorScheme =
         when {
             dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-                val context = LocalContext.current
-                if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+                if (isDarkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
             }
 
-            darkTheme -> {
+            isDarkTheme -> {
                 DarkColorScheme
             }
 
