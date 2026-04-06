@@ -57,11 +57,15 @@ import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.LogUtils
 
-
-enum class ThemeMode(@StringRes val titleRes: Int, val value: Int) {
+enum class ThemeMode(
+    @StringRes val titleRes: Int,
+    val value: Int,
+) {
     SYSTEM(R.string.theme_system, 0),
     LIGHT(R.string.theme_light, 1),
-    DARK(R.string.theme_dark, 2);
+    DARK(R.string.theme_dark, 2),
+    ;
+
     companion object {
         fun fromValue(value: Int) = entries.find { it.value == value } ?: SYSTEM
     }
@@ -78,7 +82,6 @@ fun SettingsScreen(navController: NavController) {
     val themeValue by DebugPreferences.themeModeFlow(mContext).collectAsState(initial = 0)
     val currentThemeMode = ThemeMode.fromValue(themeValue)
     var themeMenuExpanded by remember { mutableStateOf(false) }
-
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -151,14 +154,15 @@ fun SettingsScreen(navController: NavController) {
                 trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
             )
             ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { themeMenuExpanded = true },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { themeMenuExpanded = true },
                 leadingContent = { Icon(Icons.Outlined.Palette, contentDescription = null) },
                 headlineContent = {
                     Text(
                         stringResource(R.string.theme_title),
-                        style = MaterialTheme.typography.titleMedium
+                        style = MaterialTheme.typography.titleMedium,
                     )
                 },
                 supportingContent = { Text(stringResource(currentThemeMode.titleRes)) },
@@ -169,7 +173,7 @@ fun SettingsScreen(navController: NavController) {
                         DropdownMenu(
                             expanded = themeMenuExpanded,
                             onDismissRequest = { themeMenuExpanded = false },
-                            shape = RoundedCornerShape(16.dp)
+                            shape = RoundedCornerShape(16.dp),
                         ) {
                             ThemeMode.entries.forEach { mode ->
                                 DropdownMenuItem(
@@ -186,21 +190,20 @@ fun SettingsScreen(navController: NavController) {
                                             Icon(
                                                 Icons.Default.Check,
                                                 contentDescription = null,
-                                                modifier = Modifier.size(20.dp)
+                                                modifier = Modifier.size(20.dp),
                                             )
                                         }
-                                    }
+                                    },
                                 )
                             }
                         }
                     }
-                }
+                },
             )
             Spacer(modifier = Modifier.weight(1f))
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

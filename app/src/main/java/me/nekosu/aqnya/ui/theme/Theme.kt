@@ -45,11 +45,12 @@ fun NekosuTheme(
 ) {
     val context = LocalContext.current
     val themePreference by DebugPreferences.themeModeFlow(context).collectAsState(initial = 0)
-    val isDarkTheme = when (themePreference) {
-        1 -> false
-        2 -> true
-        else -> isSystemInDarkTheme()
-    }
+    val isDarkTheme =
+        when (themePreference) {
+            1 -> false
+            2 -> true
+            else -> isSystemInDarkTheme()
+        }
     val colorScheme =
         when {
             dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
