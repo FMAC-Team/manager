@@ -58,7 +58,7 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.LogUtils
 
 enum class ThemeMode(
-    @StringRes val titleRes: Int,
+    @param:StringRes val titleRes: Int,
     val value: Int,
 ) {
     SYSTEM(R.string.theme_system, 0),
@@ -167,9 +167,7 @@ fun SettingsScreen(navController: NavController) {
                 },
                 supportingContent = { Text(stringResource(currentThemeMode.titleRes)) },
                 trailingContent = {
-                    // 💡 绝杀：把 Box 放在 trailingContent 里！它现在绝对在最右边了！
                     Box {
-                        // 你甚至可以在这里放个 Icon(Icons.Outlined.ChevronRight, null) 作为装饰
                         DropdownMenu(
                             expanded = themeMenuExpanded,
                             onDismissRequest = { themeMenuExpanded = false },
@@ -180,7 +178,6 @@ fun SettingsScreen(navController: NavController) {
                                     text = { Text(stringResource(mode.titleRes)) },
                                     onClick = {
                                         themeMenuExpanded = false
-                                        // 💾 点击时，存入 DataStore！
                                         scope.launch {
                                             DebugPreferences.setThemeMode(mContext, mode.value)
                                         }
