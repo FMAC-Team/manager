@@ -57,6 +57,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -71,6 +72,7 @@ import me.nekosu.aqnya.util.CheckUpdate
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.rememberPermissionState
+
 
 @Composable
 fun BottomNavigationBar(
@@ -275,7 +277,9 @@ fun MainScreen() {
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
-                ) { HistoryScreen() }
+                ) {
+                    HistoryScreen(navController = navController)
+                }
 
                 composable(
                     route = BottomNavItem.FmacRules.route,
@@ -283,7 +287,9 @@ fun MainScreen() {
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
-                ) { RulesScreen() }
+                ) {
+                    RulesScreen()
+                }
 
                 composable(
                     route = BottomNavItem.Settings.route,
@@ -291,25 +297,60 @@ fun MainScreen() {
                     exitTransition = { fadeOut(commonTween) },
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
-                ) { SettingsScreen(navController) }
+                ) {
+                    SettingsScreen(navController)
+                }
 
                 composable(
                     route = "about",
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
-                ) { AboutScreen(navController) }
+                ) {
+                    AboutScreen(navController)
+                }
 
                 composable(
                     route = "open_source",
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
-                ) { OpenSourceScreen(navController) }
+                ) {
+                    OpenSourceScreen(navController)
+                }
 
                 composable(
                     route = "debug_settings",
                     enterTransition = { fadeIn(commonTween) },
                     exitTransition = { fadeOut(commonTween) },
-                ) { DebugSettingsScreen(navController) }
+                ) {
+                    DebugSettingsScreen(navController)
+                }
+
+                // 详情页路由
+                composable("app_detail/{packageName}") { backStackEntry ->
+                    val pkg = backStackEntry.arguments?.getString("packageName")!!
+                    val appViewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context.applicationContext))
+
+                    val app = appViewModel.allApps.find { it.packageName == pkg }
+
+                    if (app != null) {
+                        AppDetailScreen(
+                            app = app,
+                            config = appViewModel.appConfigs[pkg],
+                            onSave = { appViewModel.setAppConfig(app, it) },
+                            onBack = { navController.popBackStack() },
+                            navController = navController
+                        )
+                    } else {
+                        // 如果应用信息尚未加载（例如通过深层链接进入），则返回
+                        LaunchedEffect(Unit) {
+                            appViewModel.loadApps()
+                            if (appViewModel.allApps.none { it.packageName == pkg }) {
+                                navController.popBackStack()
+                            }
+                        }
+                        LoadingState()
+                    }
+                }
             }
 
             KeyInputDialog(
@@ -414,7 +455,9 @@ fun KeyInputDialog(
                             onDismiss()
                         }
                     },
-                ) { Text(stringResource(R.string.dialog_key_save)) }
+                ) {
+                    Text(stringResource(R.string.dialog_key_save))
+                }
             },
             dismissButton = {
                 TextButton(onClick = onDismiss) {
