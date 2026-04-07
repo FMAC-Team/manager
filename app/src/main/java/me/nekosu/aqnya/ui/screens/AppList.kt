@@ -53,8 +53,8 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
-import androidx.navigation.NavController // 新增引用
-import androidx.navigation.compose.rememberNavController // 新增引用
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 
 enum class LinuxCap(val value: Int, val label: String, val description: String) {
     CAP_CHOWN         (0,  "CHOWN",          "任意更改文件 UID/GID"),
@@ -112,6 +112,7 @@ class AppViewModel(private val context: Context) : ViewModel() {
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
+    
     var isLoaded by mutableStateOf(false)
         private set
 
@@ -120,22 +121,51 @@ class AppViewModel(private val context: Context) : ViewModel() {
 
     init {
         viewModelScope.launch(Dispatchers.IO) {
-            val allowed = dbHelper.getAllowedPackages()
-            appConfigs = allowed.associateWith { AppConfig(allowed = true) }
-            val nc = ncore()
-            val pm = context.packageManager
-            for (pkg in allowed) {
-                try {
-                    val uid = pm.getApplicationInfo(pkg, 0).uid
-                    if (nc.hasuid(uid) == 0) nc.adduid(uid)
-                } catch (_: Exception) {}
-            }
+            loadAppConfigs()
         }
     }
 
     override fun onCleared() {
         super.onCleared()
         dbHelper.close()
+    }
+
+    private suspend fun loadAppConfigs() {
+        withContext(Dispatchers.IO) {
+            try {
+                val allowed = dbHelper.getAllowedPackages()
+                val configs = mutableMapOf<String, AppConfig>()
+                
+                for (pkg in allowed) {
+                    val capsJson = prefs.getString("caps_$pkg", null)
+                    val caps = if (capsJson != null) {
+                        try {
+                            val type = object : TypeToken<Set<String>>() {}.type
+                            val capLabels = gson.fromJson<Set<String>>(capsJson, type)
+                            LinuxCap.entries.filter { it.label in capLabels }.toSet()
+                        } catch (_: Exception) {
+                            DEFAULT_CAPS
+                        }
+                    } else {
+                        DEFAULT_CAPS
+                    }
+                    configs[pkg] = AppConfig(allowed = true, caps = caps)
+                }
+                
+                appConfigs = configs
+                
+                val nc = ncore()
+                val pm = context.packageManager
+                for (pkg in allowed) {
+                    try {
+                        val uid = pm.getApplicationInfo(pkg, 0).uid
+                        if (nc.hasuid(uid) == 0) nc.adduid(uid)
+                    } catch (_: Exception) {}
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
@@ -146,7 +176,10 @@ class AppViewModel(private val context: Context) : ViewModel() {
                     val type = object : TypeToken<List<AppInfo>>() {}.type
                     allApps = gson.fromJson(cached, type)
                     isLoaded = true
-                    if (allApps.isNotEmpty()) return@withContext
+                    if (allApps.isNotEmpty()) {
+                        loadAppConfigs()
+                        return@withContext
+                    }
                 }
             }
             val pm = context.packageManager
@@ -164,6 +197,7 @@ class AppViewModel(private val context: Context) : ViewModel() {
                 }.sortedBy { it.name.lowercase() }
             isLoaded = true
             prefs.edit().putString("apps_cache", gson.toJson(allApps)).apply()
+            loadAppConfigs()
         }
     }
 
@@ -173,10 +207,29 @@ class AppViewModel(private val context: Context) : ViewModel() {
         } else {
             appConfigs - app.packageName
         }
+        
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, config.allowed)
+            
+            if (config.allowed) {
+                val capsJson = gson.toJson(config.caps.map { it.label }.toSet())
+                prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
+            } else {
+                prefs.edit().remove("caps_${app.packageName}").apply()
+            }
+            
             val nc = ncore()
-            if (config.allowed) nc.adduid(app.uid) else nc.deluid(app.uid)
+            if (config.allowed) {
+                nc.adduid(app.uid)
+            } else {
+                nc.deluid(app.uid)
+            }
+        }
+    }
+
+    fun refreshAppConfig(packageName: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            loadAppConfigs()
         }
     }
 }
@@ -198,7 +251,7 @@ fun getAdapterShape(index: Int, totalCount: Int, cornerRadius: Dp = 20.dp): Shap
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    navController: NavController, // 添加参数
+    navController: NavController,
     extraBottomPadding: Dp = 96.dp
 ) {
     val context = LocalContext.current.applicationContext
@@ -216,8 +269,15 @@ fun HistoryScreen(
     LaunchedEffect(searchQuery) { listState.scrollToItem(0) }
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    LaunchedEffect(navBackStackEntry) {
+        if (navBackStackEntry?.destination?.route?.startsWith("app_detail/") == false) {
+            viewModel.refreshAppConfig("")
+        }
+    }
+
     val sortSnapshotAllowed = remember { mutableStateOf<Map<String, AppConfig>>(emptyMap()) }
-    LaunchedEffect(viewModel.allApps, filterMode, searchQuery) {
+    LaunchedEffect(viewModel.allApps, filterMode, searchQuery, viewModel.appConfigs) {
         sortSnapshotAllowed.value = viewModel.appConfigs
         apps = viewModel.allApps
             .filter { app ->
@@ -376,7 +436,6 @@ fun HistoryScreen(
                                     app = app,
                                     config = viewModel.appConfigs[app.packageName],
                                     onClick = {
-                                        // 修正：使用导航跳转
                                         navController.navigate("app_detail/${app.packageName}")
                                     },
                                     shape = getAdapterShape(index, allowedList.size),
@@ -406,7 +465,6 @@ fun HistoryScreen(
     }
 }
 
-
 @Composable
 fun SectionLabel(text: String) {
     Text(
@@ -420,15 +478,25 @@ fun SectionLabel(text: String) {
 
 @Composable
 fun LoadingState() {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         CircularProgressIndicator(strokeWidth = 2.5.dp, modifier = Modifier.size(36.dp))
-        Text("加载应用列表…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+        Text(
+            "加载应用列表…",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        )
     }
 }
 
 @Composable
 fun EmptyState(isSearching: Boolean, query: String) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
         Icon(
             imageVector = if (isSearching) Icons.Default.Search else Icons.Default.Android,
             contentDescription = null,
@@ -500,7 +568,10 @@ fun AppInfoItem(
                     },
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     Text(
                         text = app.name,
                         style = MaterialTheme.typography.bodyMedium,
@@ -510,7 +581,10 @@ fun AppInfoItem(
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     if (app.isSystem) {
-                        Surface(shape = RoundedCornerShape(4.dp), color = MaterialTheme.colorScheme.secondaryContainer) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = MaterialTheme.colorScheme.secondaryContainer
+                        ) {
                             Text(
                                 text = "系统",
                                 modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
@@ -551,33 +625,6 @@ fun AppInfoItem(
                     )
                 }
             }
-
-       /*     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = if (isAllowed)
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                    else
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f),
-                ) {
-                    Text(
-                        text = if (isAllowed) "已授权" else "未授权",
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                        fontSize = 9.sp,
-                        color = if (isAllowed)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-                Icon(
-                    Icons.Default.ChevronRight,
-                    contentDescription = "配置",
-                    modifier = Modifier.size(18.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f),
-                )
-            }*/
         }
     }
 }
@@ -589,7 +636,9 @@ fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
         value = withContext(Dispatchers.IO) {
             try {
                 context.packageManager.getApplicationIcon(packageName).toBitmap().asImageBitmap()
-            } catch (_: Exception) { null }
+            } catch (_: Exception) {
+                null
+            }
         }
     }
     if (iconBitmap != null) {
@@ -604,12 +653,11 @@ fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun PreviewHistoryScreen() {
-    val navController = rememberNavController()
-    MaterialTheme { 
-        HistoryScreen(navController = navController) 
+    val navController = androidx.navigation.compose.rememberNavController()
+    MaterialTheme {
+        HistoryScreen(navController = navController)
     }
 }
