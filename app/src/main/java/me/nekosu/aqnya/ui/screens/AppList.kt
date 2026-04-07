@@ -139,45 +139,46 @@ class AppViewModel(
         dbHelper.close()
     }
 
-    private suspend fun loadAppConfigs() {
-        withContext(Dispatchers.IO) {
-            try {
-                val allowed = dbHelper.getAllowedPackages()
-                val configs = mutableMapOf<String, AppConfig>()
+private suspend fun loadAppConfigs() {
+    withContext(Dispatchers.IO) {
+        try {
+            val allowed = dbHelper.getAllowedPackages()
+            val configs = mutableMapOf<String, AppConfig>()
 
-                for (pkg in allowed) {
-                    val capsJson = prefs.getString("caps_$pkg", null)
-                    val caps =
-                        if (capsJson != null) {
-                            try {
-                                val type = object : TypeToken<Set<String>>() {}.type
-                                val capLabels = gson.fromJson<Set<String>>(capsJson, type)
-                                LinuxCap.entries.filter { it.label in capLabels }.toSet()
-                            } catch (_: Exception) {
-                                DEFAULT_CAPS
-                            }
-                        } else {
+            for (pkg in allowed) {
+                val capsJson = prefs.getString("caps_$pkg", null)
+                val caps =
+                    if (capsJson != null) {
+                        try {
+                            val type = object : TypeToken<Set<String>>() {}.type
+                            val capLabels = gson.fromJson<Set<String>>(capsJson, type)
+                            LinuxCap.entries.filter { it.label in capLabels }.toSet()
+                        } catch (_: Exception) {
                             DEFAULT_CAPS
                         }
-                    configs[pkg] = AppConfig(allowed = true, caps = caps)
-                }
-
-                appConfigs = configs
-
-                val nc = ncore()
-                val pm = context.packageManager
-                for (pkg in allowed) {
-                    try {
-                        val uid = pm.getApplicationInfo(pkg, 0).uid
-                        if (nc.hasuid(uid) == 0) nc.adduid(uid)
-                    } catch (_: Exception) {
+                    } else {
+                        DEFAULT_CAPS
                     }
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
+                configs[pkg] = AppConfig(allowed = true, caps = caps)
             }
+
+            appConfigs = configs
+
+            val nc = ncore()
+            val pm = context.packageManager
+            for ((pkg, cfg) in configs) {
+                try {
+                    val uid = pm.getApplicationInfo(pkg, 0).uid
+                    if (nc.hasuid(uid) == 0) nc.adduid(uid)
+                    val capsBits = cfg.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
+                    nc.setCap(uid, capsBits)
+                } catch (_: Exception) {}
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
+}
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -214,35 +215,35 @@ class AppViewModel(
         }
     }
 
-    fun setAppConfig(
-        app: AppInfo,
-        config: AppConfig,
-    ) {
-        appConfigs =
-            if (config.allowed) {
-                appConfigs + (app.packageName to config)
-            } else {
-                appConfigs - app.packageName
-            }
+fun setAppConfig(
+    app: AppInfo,
+    config: AppConfig,
+) {
+    appConfigs =
+        if (config.allowed) {
+            appConfigs + (app.packageName to config)
+        } else {
+            appConfigs - app.packageName
+        }
 
-        viewModelScope.launch(Dispatchers.IO) {
-            dbHelper.setAllowed(app.packageName, config.allowed)
+    viewModelScope.launch(Dispatchers.IO) {
+        dbHelper.setAllowed(app.packageName, config.allowed)
 
-            if (config.allowed) {
-                val capsJson = gson.toJson(config.caps.map { it.label }.toSet())
-                prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
-            } else {
-                prefs.edit().remove("caps_${app.packageName}").apply()
-            }
+        val nc = ncore()
+        if (config.allowed) {
+            val capsJson = gson.toJson(config.caps.map { it.label }.toSet())
+            prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
 
-            val nc = ncore()
-            if (config.allowed) {
-                nc.adduid(app.uid)
-            } else {
-                nc.deluid(app.uid)
-            }
+            nc.adduid(app.uid)
+            val capsBits = config.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
+            nc.setCap(app.uid, capsBits)
+        } else {
+            prefs.edit().remove("caps_${app.packageName}").apply()
+            nc.delCap(app.uid)
+            nc.deluid(app.uid)
         }
     }
+}
 
     fun refreshAppConfig(packageName: String) {
         viewModelScope.launch(Dispatchers.IO) {
