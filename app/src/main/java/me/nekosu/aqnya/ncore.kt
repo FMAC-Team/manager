@@ -25,8 +25,13 @@ class ncore {
     ): Int
 
     external fun delRule(path: String): Int
-    
-    external fun setCap(uid: Int, caps: Long): Int
-external fun getCap(uid: Int): Long
-external fun delCap(uid: Int): Int
+
+    external fun setCap(
+        uid: Int,
+        caps: Long,
+    ): Int
+
+    external fun getCap(uid: Int): Long
+
+    external fun delCap(uid: Int): Int
 }
