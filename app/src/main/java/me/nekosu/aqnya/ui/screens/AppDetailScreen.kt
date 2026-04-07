@@ -85,26 +85,27 @@ fun CapsDialog(
                 Spacer(Modifier.height(4.dp))
 
                 Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 380.dp)
-                        .verticalScroll(rememberScrollState()),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 380.dp)
+                            .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     LinuxCap.entries.forEach { cap ->
                         val checked = draft.contains(cap)
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(10.dp))
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    draft = if (checked) draft - cap else draft + cap
-                                }
-                                .padding(vertical = 4.dp, horizontal = 2.dp),
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        draft = if (checked) draft - cap else draft + cap
+                                    }.padding(vertical = 4.dp, horizontal = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(
@@ -160,7 +161,7 @@ fun AppDetailScreen(
     onSave: (AppConfig) -> Unit,
     onBack: () -> Unit,
     navController: NavController,
-){
+) {
     var allowed by remember { mutableStateOf(config?.allowed ?: false) }
     var caps by remember { mutableStateOf(config?.caps ?: DEFAULT_CAPS) }
     var showCapsDialog by remember { mutableStateOf(false) }
@@ -216,10 +217,11 @@ fun AppDetailScreen(
         },
     ) { innerPadding ->
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
         ) {
@@ -227,22 +229,25 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                        ),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         AppIcon(
                             packageName = app.packageName,
-                            modifier = Modifier
-                                .size(52.dp)
-                                .clip(RoundedCornerShape(12.dp)),
+                            modifier =
+                                Modifier
+                                    .size(52.dp)
+                                    .clip(RoundedCornerShape(12.dp)),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -282,24 +287,32 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (allowed)
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-                        else
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                if (allowed) {
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+                                },
+                        ),
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = if (allowed) Icons.Default.LockOpen else Icons.Default.Lock,
                             contentDescription = null,
-                            tint = if (allowed) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurfaceVariant,
+                            tint =
+                                if (allowed) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -319,12 +332,18 @@ fun AppDetailScreen(
                             onCheckedChange = {
                                 haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                                 allowed = it
-                                if (!it) caps = emptySet()
-                                else if (caps.isEmpty()) caps = DEFAULT_CAPS
+                                if (!it) {
+                                    caps = emptySet()
+                                } else if (caps.isEmpty()) {
+                                    caps = DEFAULT_CAPS
+                                }
                             },
-                            thumbContent = if (allowed) {
-                                { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                            } else null,
+                            thumbContent =
+                                if (allowed) {
+                                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                                } else {
+                                    null
+                                },
                         )
                     }
                 }
@@ -339,32 +358,39 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when {
-                            !allowed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
-                            caps.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
-                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                        },
-                    ),
+                    colors =
+                        CardDefaults.cardColors(
+                            containerColor =
+                                when {
+                                    !allowed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
+                                    caps.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
+                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+                                },
+                        ),
                     onClick = {
                         // 修复：点击时显示对话框，而非导航到错误路由
                         if (allowed) {
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             showCapsDialog = true
                         }
-                    }
+                    },
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = null,
-                            tint = if (allowed) MaterialTheme.colorScheme.primary
-                                   else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                            tint =
+                                if (allowed) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                },
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -372,16 +398,22 @@ fun AppDetailScreen(
                                 text = "${caps.size} / ${LinuxCap.entries.size} 已选",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = if (allowed)
-                                    MaterialTheme.colorScheme.onSurface
-                                else
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                color =
+                                    if (allowed) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    },
                             )
                             if (allowed) {
                                 Text(
-                                    text = if (caps.isEmpty()) "无 capabilities"
-                                           else caps.take(4).joinToString(" · ") { it.label } +
-                                                if (caps.size > 4) " +${caps.size - 4}" else "",
+                                    text =
+                                        if (caps.isEmpty()) {
+                                            "无 capabilities"
+                                        } else {
+                                            caps.take(4).joinToString(" · ") { it.label } +
+                                                if (caps.size > 4) " +${caps.size - 4}" else ""
+                                        },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                     maxLines = 1,

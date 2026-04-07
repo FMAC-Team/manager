@@ -73,7 +73,6 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.rememberPermissionState
 
-
 @Composable
 fun BottomNavigationBar(
     navController: NavController,
@@ -338,7 +337,7 @@ fun MainScreen() {
                             config = appViewModel.appConfigs[pkg],
                             onSave = { appViewModel.setAppConfig(app, it) },
                             onBack = { navController.popBackStack() },
-                            navController = navController
+                            navController = navController,
                         )
                     } else {
                         // 如果应用信息尚未加载（例如通过深层链接进入），则返回

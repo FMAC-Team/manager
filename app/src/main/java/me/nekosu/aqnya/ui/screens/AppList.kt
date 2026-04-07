@@ -45,6 +45,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -53,37 +55,40 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
-import androidx.navigation.NavController
-import androidx.navigation.compose.currentBackStackEntryAsState
 
-enum class LinuxCap(val value: Int, val label: String, val description: String) {
-    CAP_CHOWN         (0,  "CHOWN",          "任意更改文件 UID/GID"),
-    CAP_DAC_OVERRIDE  (1,  "DAC_OVERRIDE",   "绕过文件读写执行权限检查"),
-    CAP_DAC_READ_SEARCH(2, "DAC_READ_SEARCH","绕过文件读取/目录搜索权限检查"),
-    CAP_FOWNER        (3,  "FOWNER",         "绕过需要文件所有者检查的操作"),
-    CAP_SETUID        (7,  "SETUID",         "任意更改进程 UID"),
-    CAP_SETGID        (6,  "SETGID",         "任意更改进程 GID"),
-    CAP_SETPCAP       (8,  "SETPCAP",        "修改进程 capability 集合"),
-    CAP_NET_ADMIN     (12, "NET_ADMIN",      "网络配置（接口/路由/防火墙）"),
-    CAP_NET_RAW       (13, "NET_RAW",        "使用原始/数据报套接字"),
-    CAP_SYS_ADMIN     (21, "SYS_ADMIN",      "大量系统管理操作（挂载等）"),
-    CAP_SYS_CHROOT    (18, "SYS_CHROOT",     "调用 chroot()"),
-    CAP_SYS_PTRACE    (19, "SYS_PTRACE",     "ptrace 任意进程"),
-    CAP_SYS_MODULE    (16, "SYS_MODULE",     "加载/卸载内核模块"),
-    CAP_SYS_RAWIO     (17, "SYS_RAWIO",      "访问 /dev/mem、ioperm 等"),
-    CAP_KILL          (5,  "KILL",           "向任意进程发送信号"),
-    CAP_AUDIT_WRITE   (29, "AUDIT_WRITE",    "写入内核审计日志"),
+enum class LinuxCap(
+    val value: Int,
+    val label: String,
+    val description: String,
+) {
+    CAP_CHOWN(0, "CHOWN", "任意更改文件 UID/GID"),
+    CAP_DAC_OVERRIDE(1, "DAC_OVERRIDE", "绕过文件读写执行权限检查"),
+    CAP_DAC_READ_SEARCH(2, "DAC_READ_SEARCH", "绕过文件读取/目录搜索权限检查"),
+    CAP_FOWNER(3, "FOWNER", "绕过需要文件所有者检查的操作"),
+    CAP_SETUID(7, "SETUID", "任意更改进程 UID"),
+    CAP_SETGID(6, "SETGID", "任意更改进程 GID"),
+    CAP_SETPCAP(8, "SETPCAP", "修改进程 capability 集合"),
+    CAP_NET_ADMIN(12, "NET_ADMIN", "网络配置（接口/路由/防火墙）"),
+    CAP_NET_RAW(13, "NET_RAW", "使用原始/数据报套接字"),
+    CAP_SYS_ADMIN(21, "SYS_ADMIN", "大量系统管理操作（挂载等）"),
+    CAP_SYS_CHROOT(18, "SYS_CHROOT", "调用 chroot()"),
+    CAP_SYS_PTRACE(19, "SYS_PTRACE", "ptrace 任意进程"),
+    CAP_SYS_MODULE(16, "SYS_MODULE", "加载/卸载内核模块"),
+    CAP_SYS_RAWIO(17, "SYS_RAWIO", "访问 /dev/mem、ioperm 等"),
+    CAP_KILL(5, "KILL", "向任意进程发送信号"),
+    CAP_AUDIT_WRITE(29, "AUDIT_WRITE", "写入内核审计日志"),
 }
 
-val DEFAULT_CAPS: Set<LinuxCap> = setOf(
-    LinuxCap.CAP_CHOWN,
-    LinuxCap.CAP_DAC_OVERRIDE,
-    LinuxCap.CAP_DAC_READ_SEARCH,
-    LinuxCap.CAP_FOWNER,
-    LinuxCap.CAP_SETUID,
-    LinuxCap.CAP_SETGID,
-    LinuxCap.CAP_SYS_ADMIN,
-)
+val DEFAULT_CAPS: Set<LinuxCap> =
+    setOf(
+        LinuxCap.CAP_CHOWN,
+        LinuxCap.CAP_DAC_OVERRIDE,
+        LinuxCap.CAP_DAC_READ_SEARCH,
+        LinuxCap.CAP_FOWNER,
+        LinuxCap.CAP_SETUID,
+        LinuxCap.CAP_SETGID,
+        LinuxCap.CAP_SYS_ADMIN,
+    )
 
 data class AppInfo(
     val name: String,
@@ -98,21 +103,25 @@ data class AppConfig(
     val caps: Set<LinuxCap> = DEFAULT_CAPS,
 )
 
-enum class FilterMode(@param:StringRes val labelRes: Int) {
+enum class FilterMode(
+    @param:StringRes val labelRes: Int,
+) {
     ALL(R.string.all_app),
     LAUNCHABLE(R.string.can_launch_app),
     SYSTEM(R.string.system_app),
     USER(R.string.user_app),
 }
 
-class AppViewModel(private val context: Context) : ViewModel() {
+class AppViewModel(
+    private val context: Context,
+) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
     private val dbHelper = RootDbHelper(context)
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
-    
+
     var isLoaded by mutableStateOf(false)
         private set
 
@@ -135,32 +144,34 @@ class AppViewModel(private val context: Context) : ViewModel() {
             try {
                 val allowed = dbHelper.getAllowedPackages()
                 val configs = mutableMapOf<String, AppConfig>()
-                
+
                 for (pkg in allowed) {
                     val capsJson = prefs.getString("caps_$pkg", null)
-                    val caps = if (capsJson != null) {
-                        try {
-                            val type = object : TypeToken<Set<String>>() {}.type
-                            val capLabels = gson.fromJson<Set<String>>(capsJson, type)
-                            LinuxCap.entries.filter { it.label in capLabels }.toSet()
-                        } catch (_: Exception) {
+                    val caps =
+                        if (capsJson != null) {
+                            try {
+                                val type = object : TypeToken<Set<String>>() {}.type
+                                val capLabels = gson.fromJson<Set<String>>(capsJson, type)
+                                LinuxCap.entries.filter { it.label in capLabels }.toSet()
+                            } catch (_: Exception) {
+                                DEFAULT_CAPS
+                            }
+                        } else {
                             DEFAULT_CAPS
                         }
-                    } else {
-                        DEFAULT_CAPS
-                    }
                     configs[pkg] = AppConfig(allowed = true, caps = caps)
                 }
-                
+
                 appConfigs = configs
-                
+
                 val nc = ncore()
                 val pm = context.packageManager
                 for (pkg in allowed) {
                     try {
                         val uid = pm.getApplicationInfo(pkg, 0).uid
                         if (nc.hasuid(uid) == 0) nc.adduid(uid)
-                    } catch (_: Exception) {}
+                    } catch (_: Exception) {
+                    }
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -183,41 +194,47 @@ class AppViewModel(private val context: Context) : ViewModel() {
                 }
             }
             val pm = context.packageManager
-            allApps = pm.getInstalledPackages(PackageManager.GET_META_DATA)
-                .mapNotNull { pkg ->
-                    pkg.applicationInfo?.let { ai ->
-                        AppInfo(
-                            name = ai.loadLabel(pm).toString(),
-                            packageName = pkg.packageName,
-                            uid = ai.uid,
-                            isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
-                            isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
-                        )
-                    }
-                }.sortedBy { it.name.lowercase() }
+            allApps =
+                pm
+                    .getInstalledPackages(PackageManager.GET_META_DATA)
+                    .mapNotNull { pkg ->
+                        pkg.applicationInfo?.let { ai ->
+                            AppInfo(
+                                name = ai.loadLabel(pm).toString(),
+                                packageName = pkg.packageName,
+                                uid = ai.uid,
+                                isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
+                                isLaunchable = pm.getLaunchIntentForPackage(pkg.packageName) != null,
+                            )
+                        }
+                    }.sortedBy { it.name.lowercase() }
             isLoaded = true
             prefs.edit().putString("apps_cache", gson.toJson(allApps)).apply()
             loadAppConfigs()
         }
     }
 
-    fun setAppConfig(app: AppInfo, config: AppConfig) {
-        appConfigs = if (config.allowed) {
-            appConfigs + (app.packageName to config)
-        } else {
-            appConfigs - app.packageName
-        }
-        
+    fun setAppConfig(
+        app: AppInfo,
+        config: AppConfig,
+    ) {
+        appConfigs =
+            if (config.allowed) {
+                appConfigs + (app.packageName to config)
+            } else {
+                appConfigs - app.packageName
+            }
+
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, config.allowed)
-            
+
             if (config.allowed) {
                 val capsJson = gson.toJson(config.caps.map { it.label }.toSet())
                 prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
             } else {
                 prefs.edit().remove("caps_${app.packageName}").apply()
             }
-            
+
             val nc = ncore()
             if (config.allowed) {
                 nc.adduid(app.uid)
@@ -234,25 +251,31 @@ class AppViewModel(private val context: Context) : ViewModel() {
     }
 }
 
-class AppViewModelFactory(private val context: Context) : ViewModelProvider.Factory {
+class AppViewModelFactory(
+    private val context: Context,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T = AppViewModel(context) as T
 }
 
 @Composable
-fun getAdapterShape(index: Int, totalCount: Int, cornerRadius: Dp = 20.dp): Shape =
+fun getAdapterShape(
+    index: Int,
+    totalCount: Int,
+    cornerRadius: Dp = 20.dp,
+): Shape =
     when {
         totalCount <= 1 -> RoundedCornerShape(cornerRadius)
-        index == 0     -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
+        index == 0 -> RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius)
         index == totalCount - 1 -> RoundedCornerShape(bottomStart = cornerRadius, bottomEnd = cornerRadius)
-        else           -> RoundedCornerShape(0.dp)
+        else -> RoundedCornerShape(0.dp)
     }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     navController: NavController,
-    extraBottomPadding: Dp = 96.dp
+    extraBottomPadding: Dp = 96.dp,
 ) {
     val context = LocalContext.current.applicationContext
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
@@ -279,23 +302,26 @@ fun HistoryScreen(
     val sortSnapshotAllowed = remember { mutableStateOf<Map<String, AppConfig>>(emptyMap()) }
     LaunchedEffect(viewModel.allApps, filterMode, searchQuery, viewModel.appConfigs) {
         sortSnapshotAllowed.value = viewModel.appConfigs
-        apps = viewModel.allApps
-            .filter { app ->
-                val passFilter = when (filterMode) {
-                    FilterMode.ALL       -> true
-                    FilterMode.LAUNCHABLE -> app.isLaunchable
-                    FilterMode.SYSTEM    -> app.isSystem
-                    FilterMode.USER      -> !app.isSystem
-                }
-                val q = searchQuery.trim().lowercase()
-                val passSearch = q.isEmpty()
-                    || app.name.lowercase().contains(q)
-                    || app.packageName.lowercase().contains(q)
-                passFilter && passSearch
-            }.sortedWith(
-                compareByDescending<AppInfo> { sortSnapshotAllowed.value.containsKey(it.packageName) }
-                    .thenBy { it.name.lowercase() }
-            )
+        apps =
+            viewModel.allApps
+                .filter { app ->
+                    val passFilter =
+                        when (filterMode) {
+                            FilterMode.ALL -> true
+                            FilterMode.LAUNCHABLE -> app.isLaunchable
+                            FilterMode.SYSTEM -> app.isSystem
+                            FilterMode.USER -> !app.isSystem
+                        }
+                    val q = searchQuery.trim().lowercase()
+                    val passSearch =
+                        q.isEmpty() ||
+                            app.name.lowercase().contains(q) ||
+                            app.packageName.lowercase().contains(q)
+                    passFilter && passSearch
+                }.sortedWith(
+                    compareByDescending<AppInfo> { sortSnapshotAllowed.value.containsKey(it.packageName) }
+                        .thenBy { it.name.lowercase() },
+                )
     }
 
     Scaffold(
@@ -325,12 +351,13 @@ fun HistoryScreen(
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
-                                colors = TextFieldDefaults.colors(
-                                    focusedContainerColor = Color.Transparent,
-                                    unfocusedContainerColor = Color.Transparent,
-                                    focusedIndicatorColor = Color.Transparent,
-                                    unfocusedIndicatorColor = Color.Transparent,
-                                ),
+                                colors =
+                                    TextFieldDefaults.colors(
+                                        focusedContainerColor = Color.Transparent,
+                                        unfocusedContainerColor = Color.Transparent,
+                                        focusedIndicatorColor = Color.Transparent,
+                                        unfocusedIndicatorColor = Color.Transparent,
+                                    ),
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
                                         IconButton(onClick = { searchQuery = "" }) {
@@ -371,9 +398,12 @@ fun HistoryScreen(
                                                     fontWeight = if (mode == filterMode) FontWeight.SemiBold else FontWeight.Normal,
                                                 )
                                             },
-                                            leadingIcon = if (mode == filterMode) {
-                                                { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
-                                            } else null,
+                                            leadingIcon =
+                                                if (mode == filterMode) {
+                                                    { Icon(Icons.Default.CheckCircle, null, Modifier.size(18.dp)) }
+                                                } else {
+                                                    null
+                                                },
                                             onClick = {
                                                 filterMode = mode
                                                 menuExpanded = false
@@ -410,18 +440,25 @@ fun HistoryScreen(
                     threshold = 40.dp,
                 )
             },
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             when {
-                !viewModel.isLoaded -> LoadingState()
-                apps.isEmpty()      -> EmptyState(isSearching, searchQuery)
+                !viewModel.isLoaded -> {
+                    LoadingState()
+                }
+
+                apps.isEmpty() -> {
+                    EmptyState(isSearching, searchQuery)
+                }
+
                 else -> {
                     val allowedList = apps.filter { viewModel.appConfigs.containsKey(it.packageName) }
-                    val otherList   = apps.filter { !viewModel.appConfigs.containsKey(it.packageName) }
+                    val otherList = apps.filter { !viewModel.appConfigs.containsKey(it.packageName) }
 
                     LazyColumn(
                         state = listState,
@@ -480,22 +517,25 @@ fun SectionLabel(text: String) {
 fun LoadingState() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         CircularProgressIndicator(strokeWidth = 2.5.dp, modifier = Modifier.size(36.dp))
         Text(
             "加载应用列表…",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         )
     }
 }
 
 @Composable
-fun EmptyState(isSearching: Boolean, query: String) {
+fun EmptyState(
+    isSearching: Boolean,
+    query: String,
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             imageVector = if (isSearching) Icons.Default.Search else Icons.Default.Android,
@@ -527,22 +567,26 @@ fun AppInfoItem(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isAllowed)
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-            else
-                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (isAllowed) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+                    },
+            ),
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
             onClick()
         },
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(modifier = Modifier.size(46.dp), contentAlignment = Alignment.Center) {
@@ -555,22 +599,25 @@ fun AppInfoItem(
             Spacer(Modifier.width(14.dp))
 
             Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(end = 8.dp)
-                    .let { mod ->
-                        if (isOverflown || expanded)
-                            mod.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                            ) { expanded = !expanded }
-                        else mod
-                    },
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .padding(end = 8.dp)
+                        .let { mod ->
+                            if (isOverflown || expanded) {
+                                mod.clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) { expanded = !expanded }
+                            } else {
+                                mod
+                            }
+                        },
                 verticalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Text(
                         text = app.name,
@@ -583,7 +630,7 @@ fun AppInfoItem(
                     if (app.isSystem) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer
+                            color = MaterialTheme.colorScheme.secondaryContainer,
                         ) {
                             Text(
                                 text = "系统",
@@ -615,9 +662,13 @@ fun AppInfoItem(
 
                 if (isAllowed && config != null) {
                     Text(
-                        text = if (config.caps.isEmpty()) "无 capabilities"
-                               else config.caps.take(4).joinToString(" · ") { it.label } +
-                                    if (config.caps.size > 4) " +${config.caps.size - 4}" else "",
+                        text =
+                            if (config.caps.isEmpty()) {
+                                "无 capabilities"
+                            } else {
+                                config.caps.take(4).joinToString(" · ") { it.label } +
+                                    if (config.caps.size > 4) " +${config.caps.size - 4}" else ""
+                            },
                         style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                         maxLines = 1,
@@ -630,16 +681,23 @@ fun AppInfoItem(
 }
 
 @Composable
-fun AppIcon(packageName: String, modifier: Modifier = Modifier) {
+fun AppIcon(
+    packageName: String,
+    modifier: Modifier = Modifier,
+) {
     val context = LocalContext.current
     val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value = withContext(Dispatchers.IO) {
-            try {
-                context.packageManager.getApplicationIcon(packageName).toBitmap().asImageBitmap()
-            } catch (_: Exception) {
-                null
+        value =
+            withContext(Dispatchers.IO) {
+                try {
+                    context.packageManager
+                        .getApplicationIcon(packageName)
+                        .toBitmap()
+                        .asImageBitmap()
+                } catch (_: Exception) {
+                    null
+                }
             }
-        }
     }
     if (iconBitmap != null) {
         Image(bitmap = iconBitmap!!, contentDescription = null, modifier = modifier)
