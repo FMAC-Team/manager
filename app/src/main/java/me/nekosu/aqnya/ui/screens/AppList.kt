@@ -232,7 +232,7 @@ class AppViewModel(
                     .mapNotNull { pkg ->
                         pkg.applicationInfo?.let { ai ->
                             AppInfo(
-                                name = ai.loadLabel(pm).toString(),
+name = ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() } ?: pkg.packageName,
                                 packageName = pkg.packageName,
                                 uid = ai.uid,
                                 isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
