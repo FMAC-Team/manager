@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.drawable.Drawable
 import android.util.LruCache
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
@@ -16,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -146,8 +146,21 @@ class AppViewModel(
 ) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
-    var filterMode by mutableStateOf(FilterMode.USER)
     private val dbHelper = RootDbHelper(context)
+
+    val listState = LazyListState()
+
+private var _filterMode = mutableStateOf(FilterMode.USER)
+var filterMode: FilterMode
+    get() = _filterMode.value
+    set(value) { _filterMode.value = value; updateFilteredApps() }
+
+private var _searchQuery = mutableStateOf("")
+var searchQuery: String
+    get() = _searchQuery.value
+    set(value) { _searchQuery.value = value; updateFilteredApps() }
+
+    var isSearching by mutableStateOf(false)
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
@@ -156,6 +169,9 @@ class AppViewModel(
         private set
 
     var appConfigs by mutableStateOf<Map<String, AppConfig>>(emptyMap())
+        private set
+
+    var filteredApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
 
     init {
@@ -167,6 +183,27 @@ class AppViewModel(
     override fun onCleared() {
         super.onCleared()
         dbHelper.close()
+    }
+
+    private fun updateFilteredApps() {
+        val snapshot = appConfigs
+        val q = searchQuery.trim().lowercase()
+        filteredApps = allApps
+            .filter { app ->
+                val passFilter = when (filterMode) {
+                    FilterMode.ALL -> true
+                    FilterMode.LAUNCHABLE -> app.isLaunchable
+                    FilterMode.SYSTEM -> app.isSystem
+                    FilterMode.USER -> !app.isSystem
+                }
+                val passSearch = q.isEmpty() ||
+                    app.name.lowercase().contains(q) ||
+                    app.packageName.lowercase().contains(q)
+                passFilter && passSearch
+            }.sortedWith(
+                compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
+                    .thenBy { it.name.lowercase() }
+            )
     }
 
     private suspend fun loadAppConfigs() {
@@ -208,6 +245,7 @@ class AppViewModel(
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+            withContext(Dispatchers.Main) { updateFilteredApps() }
         }
     }
 
@@ -256,6 +294,7 @@ class AppViewModel(
             } else {
                 appConfigs - app.packageName
             }
+        updateFilteredApps()
 
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, config.allowed)
@@ -311,17 +350,16 @@ fun HistoryScreen(
 ) {
     val context = LocalContext.current.applicationContext
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
-    val listState = rememberLazyListState()
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    val listState = viewModel.listState
+    val apps = viewModel.filteredApps
     val filterMode = viewModel.filterMode
-    var searchQuery by remember { mutableStateOf("") }
+    val searchQuery = viewModel.searchQuery
+    val isSearching = viewModel.isSearching
     var menuExpanded by remember { mutableStateOf(false) }
-    var isSearching by remember { mutableStateOf(false) }
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val refreshState = rememberPullToRefreshState()
 
-    LaunchedEffect(searchQuery) { listState.scrollToItem(0) }
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -329,31 +367,6 @@ fun HistoryScreen(
         if (navBackStackEntry?.destination?.route?.startsWith("app_detail/") == false) {
             viewModel.refreshAppConfig("")
         }
-    }
-
-    val sortSnapshotAllowed = remember { mutableStateOf<Map<String, AppConfig>>(emptyMap()) }
-    LaunchedEffect(viewModel.allApps, filterMode, searchQuery, viewModel.appConfigs) {
-        sortSnapshotAllowed.value = viewModel.appConfigs
-        apps =
-            viewModel.allApps
-                .filter { app ->
-                    val passFilter =
-                        when (filterMode) {
-                            FilterMode.ALL -> true
-                            FilterMode.LAUNCHABLE -> app.isLaunchable
-                            FilterMode.SYSTEM -> app.isSystem
-                            FilterMode.USER -> !app.isSystem
-                        }
-                    val q = searchQuery.trim().lowercase()
-                    val passSearch =
-                        q.isEmpty() ||
-                            app.name.lowercase().contains(q) ||
-                            app.packageName.lowercase().contains(q)
-                    passFilter && passSearch
-                }.sortedWith(
-                    compareByDescending<AppInfo> { sortSnapshotAllowed.value.containsKey(it.packageName) }
-                        .thenBy { it.name.lowercase() },
-                )
     }
 
     Scaffold(
@@ -367,14 +380,14 @@ fun HistoryScreen(
                     TopAppBar(
                         navigationIcon = {
                             IconButton(onClick = {
-                                isSearching = false
-                                searchQuery = ""
+                                viewModel.isSearching = false
+                                viewModel.searchQuery = ""
                             }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
                         },
                         title = {
                             TextField(
                                 value = searchQuery,
-                                onValueChange = { searchQuery = it },
+                                onValueChange = { viewModel.searchQuery = it },
                                 placeholder = {
                                     Text(
                                         "搜索应用…",
@@ -392,7 +405,7 @@ fun HistoryScreen(
                                     ),
                                 trailingIcon = {
                                     if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { searchQuery = "" }) {
+                                        IconButton(onClick = { viewModel.searchQuery = "" }) {
                                             Icon(Icons.Default.Clear, contentDescription = "清空")
                                         }
                                     }
@@ -410,7 +423,7 @@ fun HistoryScreen(
                             )
                         },
                         actions = {
-                            IconButton(onClick = { isSearching = true }) {
+                            IconButton(onClick = { viewModel.isSearching = true }) {
                                 Icon(Icons.Default.Search, null)
                             }
                             Box {
