@@ -3,6 +3,7 @@ package me.nekosu.aqnya.ui.screens
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.util.LruCache
 import androidx.annotation.StringRes
@@ -58,7 +59,6 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
-import android.graphics.Bitmap
 
 enum class LinuxCap(
     val value: Int,
