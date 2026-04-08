@@ -55,6 +55,9 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
+import android.graphics.drawable.Drawable
+import android.util.LruCache
+import androidx.compose.animation.Crossfade
 
 enum class LinuxCap(
     val value: Int,
@@ -687,35 +690,51 @@ fun AppInfoItem(
     }
 }
 
-
+private val iconCache = LruCache<String, ImageBitmap>(200)
 @Composable
 fun AppIcon(
     packageName: String,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val iconBitmap by produceState<ImageBitmap?>(null, packageName) {
-        value =
+    var iconBitmap by remember(packageName) { mutableStateOf(iconCache.get(packageName)) }
+
+    LaunchedEffect(packageName) {
+        if (iconBitmap == null) {
             withContext(Dispatchers.IO) {
                 try {
-                    context.packageManager
+                    val bitmap = context.packageManager
                         .getApplicationIcon(packageName)
                         .toBitmap()
                         .asImageBitmap()
-                } catch (_: Exception) {
-                    null
+                    iconCache.put(packageName, bitmap)
+                    iconBitmap = bitmap
+                } catch (e: Exception) {
                 }
             }
+        }
     }
-    if (iconBitmap != null) {
-        Image(bitmap = iconBitmap!!, contentDescription = null, modifier = modifier)
-    } else {
-        Icon(
-            Icons.Default.Android,
-            contentDescription = null,
-            modifier = modifier,
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-        )
+
+    Crossfade(targetState = iconBitmap, label = "icon_crossfade") { bitmap ->
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = "App Icon",
+                modifier = modifier
+            )
+        } else {
+            Box(
+                modifier = modifier,
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Android,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
     }
 }
 
