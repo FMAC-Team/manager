@@ -26,14 +26,29 @@ android {
         }
     }
 
-    sourceSets {
-        getByName("main") {
-            jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
-        }
+sourceSets {
+    getByName("main") {
+        @Suppress("DEPRECATION")
+        jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
     }
+}
+    
+    signingConfigs {
+    create("debugKey") {
+        storeFile = file("${rootDir}/debug.keystore")
+        storePassword = "android"
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+    }
+}
+
 
     buildTypes {
+    debug {
+        signingConfig = signingConfigs.getByName("debugKey")
+    }
         release {
+        signingConfig = signingConfigs.getByName("debugKey")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
