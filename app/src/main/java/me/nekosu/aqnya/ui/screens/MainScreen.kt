@@ -237,7 +237,7 @@ fun BottomNavigationBar(
 fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    var showKeyDialog by remember { mutableStateOf(false) }
+  //  var showKeyDialog by remember { mutableStateOf(false) }
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
     val navItems = remember(showRules) { BottomNavItem.items(showRules) }
 
@@ -261,9 +261,9 @@ fun MainScreen() {
     val showBottomBar = currentRoute in topLevelRoutes
 
     LaunchedEffect(Unit) {
-        if (!KeyUtils.checkKeyExists(context)) {
+      /*  if (!KeyUtils.checkKeyExists(context)) {
             showKeyDialog = true
-        }
+        }*/
         if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
             !MiuiPermissionUtils.isGranted(context)
         ) {
@@ -417,11 +417,11 @@ fun MainScreen() {
                 }
             }
 
-            KeyInputDialog(
+          /*  KeyInputDialog(
                 show = showKeyDialog,
                 onDismiss = { showKeyDialog = false },
             )
-
+*/
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
             if (navBarStyle == NavBarStyle.FLOATING) {
