@@ -578,6 +578,7 @@ fun EmptyState(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppInfoItem(
     app: AppInfo,
@@ -587,60 +588,46 @@ fun AppInfoItem(
     shape: Shape = RoundedCornerShape(20.dp),
 ) {
     val isAllowed = config?.allowed == true
-    var expanded by remember { mutableStateOf(false) }
-    var isOverflown by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = shape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    if (isAllowed) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-                    } else {
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                    },
-            ),
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
             onClick()
         },
+        modifier = modifier.fillMaxWidth(),
+        shape = shape,
+        colors = CardDefaults.cardColors(
+            containerColor = if (isAllowed) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            }
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 2.dp
+        )
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(spring(Spring.DampingRatioNoBouncy, Spring.StiffnessHigh))
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(modifier = Modifier.size(46.dp), contentAlignment = Alignment.Center) {
-                AppIcon(
-                    packageName = app.packageName,
-                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)),
-                )
-            }
+            AppIcon(
+                packageName = app.packageName,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            )
 
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(end = 8.dp)
-                        .let { mod ->
-                            if (isOverflown || expanded) {
-                                mod.clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                ) { expanded = !expanded }
-                            } else {
-                                mod
-                            }
-                        },
-                verticalArrangement = Arrangement.spacedBy(3.dp),
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -648,7 +635,7 @@ fun AppInfoItem(
                 ) {
                     Text(
                         text = app.name,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -657,55 +644,49 @@ fun AppInfoItem(
                     if (app.isSystem) {
                         Surface(
                             shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
                         ) {
                             Text(
                                 text = "系统",
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                         }
                     }
                 }
 
-                AnimatedContent(
-                    targetState = expanded,
-                    transitionSpec = {
-                        (fadeIn(tween(180)) + expandVertically(tween(220)))
-                            .togetherWith(fadeOut(tween(180)) + shrinkVertically(tween(220)))
-                    },
-                    label = "pkgReveal",
-                ) { isExpanded ->
-                    Text(
-                        text = if (isExpanded) "${app.packageName}\nUID: ${app.uid}" else "${app.packageName}  ·  ${app.uid}",
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, lineHeight = 14.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
-                        maxLines = if (isExpanded) Int.MAX_VALUE else 1,
-                        overflow = TextOverflow.Ellipsis,
-                        onTextLayout = { if (!isExpanded) isOverflown = it.hasVisualOverflow },
-                    )
-                }
+                Text(
+                    text = "${app.packageName}  ·  UID: ${app.uid}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
 
-                if (isAllowed && config != null) {
+                if (isAllowed && config != null && config.caps.isNotEmpty()) {
+                    val capsText = config.caps.take(3).joinToString(" · ") { it.label } + 
+                                   if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
                     Text(
-                        text =
-                            if (config.caps.isEmpty()) {
-                                "无 capabilities"
-                            } else {
-                                config.caps.take(4).joinToString(" · ") { it.label } +
-                                    if (config.caps.size > 4) " +${config.caps.size - 4}" else ""
-                            },
-                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                        text = capsText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
+                    )
+                } else if (isAllowed) {
+                    Text(
+                        text = "无 Capabilities",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     )
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun AppIcon(
