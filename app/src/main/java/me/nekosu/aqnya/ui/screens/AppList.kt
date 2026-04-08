@@ -295,7 +295,11 @@ class AppViewModel(
                         }
                     }.sortedBy { it.name.lowercase() }
             isLoaded = true
-            prefs.edit().putString("apps_cache", gson.toJson(allApps)).apply()
+            val versionCodeForSave =
+                context.packageManager
+                    .getPackageInfo(context.packageName, 0)
+                    .longVersionCode
+            prefs.edit().putString("apps_cache_$versionCodeForSave", gson.toJson(allApps)).apply()
             loadAppConfigs()
         }
     }
@@ -699,7 +703,7 @@ fun AppInfoItem(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (isAllowed && config.caps.isNotEmpty()) {
+                if (isAllowed && config != null && config.caps.isNotEmpty()) {
                     val capsText =
                         config.caps.take(3).joinToString(" · ") { it.label } +
                             if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
