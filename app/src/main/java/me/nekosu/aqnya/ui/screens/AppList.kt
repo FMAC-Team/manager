@@ -146,6 +146,7 @@ class AppViewModel(
 ) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
     private val gson = Gson()
+    var filterMode by mutableStateOf(FilterMode.USER)
     private val dbHelper = RootDbHelper(context)
 
     var allApps by mutableStateOf<List<AppInfo>>(emptyList())
@@ -312,7 +313,7 @@ fun HistoryScreen(
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
     val listState = rememberLazyListState()
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
-    var filterMode by remember { mutableStateOf(FilterMode.USER) }
+    val filterMode = viewModel.filterMode
     var searchQuery by remember { mutableStateOf("") }
     var menuExpanded by remember { mutableStateOf(false) }
     var isSearching by remember { mutableStateOf(false) }
@@ -436,7 +437,7 @@ fun HistoryScreen(
                                                     null
                                                 },
                                             onClick = {
-                                                filterMode = mode
+                                                viewModel.filterMode = mode
                                                 menuExpanded = false
                                             },
                                         )
