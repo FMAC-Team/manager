@@ -341,7 +341,10 @@ fun MainScreen() {
                     popEnterTransition = { fadeIn(commonTween) },
                     popExitTransition = { fadeOut(commonTween) },
                 ) {
-                    HistoryScreen(navController = navController)
+HistoryScreen(
+    navController = navController,
+    extraBottomPadding = if (navBarStyle == NavBarStyle.FLOATING) 96.dp else 0.dp,
+)
                 }
 
                 composable(

@@ -370,7 +370,7 @@ fun getAdapterShape(
 @Composable
 fun HistoryScreen(
     navController: NavController,
-    extraBottomPadding: Dp = 96.dp,
+    extraBottomPadding: Dp = 0.dp,
 ) {
     val context = LocalContext.current.applicationContext
     val viewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context))
@@ -486,6 +486,7 @@ fun HistoryScreen(
                 }
             }
         },
+        contentWindowInsets = WindowInsets(0),
     ) { innerPadding ->
         PullToRefreshBox(
             isRefreshing = isRefreshing,
