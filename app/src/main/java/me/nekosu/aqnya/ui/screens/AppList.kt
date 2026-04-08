@@ -3,8 +3,11 @@ package me.nekosu.aqnya.ui.screens
 import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
+import android.util.LruCache
 import androidx.annotation.StringRes
 import androidx.compose.animation.*
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -55,9 +58,6 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
-import android.graphics.drawable.Drawable
-import android.util.LruCache
-import androidx.compose.animation.Crossfade
 
 enum class LinuxCap(
     val value: Int,
@@ -600,28 +600,32 @@ fun AppInfoItem(
         },
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor = if (isAllowed) {
-                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-            } else {
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            }
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 2.dp
-        )
+        colors =
+            CardDefaults.cardColors(
+                containerColor =
+                    if (isAllowed) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                    },
+            ),
+        elevation =
+            CardDefaults.cardElevation(
+                defaultElevation = 0.dp,
+                pressedElevation = 2.dp,
+            ),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-AppIcon(
-    packageName = app.packageName,
-    modifier = Modifier.size(44.dp),
-)
+            AppIcon(
+                packageName = app.packageName,
+                modifier = Modifier.size(44.dp),
+            )
             Spacer(Modifier.width(16.dp))
 
             Column(
@@ -665,8 +669,9 @@ AppIcon(
                 )
 
                 if (isAllowed && config != null && config.caps.isNotEmpty()) {
-                    val capsText = config.caps.take(3).joinToString(" · ") { it.label } + 
-                                   if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
+                    val capsText =
+                        config.caps.take(3).joinToString(" · ") { it.label } +
+                            if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
                     Text(
                         text = capsText,
                         style = MaterialTheme.typography.labelSmall,
@@ -687,6 +692,7 @@ AppIcon(
 }
 
 private val iconCache = LruCache<String, ImageBitmap>(200)
+
 @Composable
 fun AppIcon(
     packageName: String,
@@ -699,10 +705,11 @@ fun AppIcon(
         if (iconBitmap == null) {
             withContext(Dispatchers.IO) {
                 try {
-                    val bitmap = context.packageManager
-                        .getApplicationIcon(packageName)
-                        .toBitmap()
-                        .asImageBitmap()
+                    val bitmap =
+                        context.packageManager
+                            .getApplicationIcon(packageName)
+                            .toBitmap()
+                            .asImageBitmap()
                     iconCache.put(packageName, bitmap)
                     iconBitmap = bitmap
                 } catch (e: Exception) {
@@ -716,18 +723,18 @@ fun AppIcon(
             Image(
                 bitmap = bitmap,
                 contentDescription = "App Icon",
-                modifier = modifier
+                modifier = modifier,
             )
         } else {
             Box(
                 modifier = modifier,
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = Icons.Default.Android,
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(24.dp),
                 )
             }
         }
