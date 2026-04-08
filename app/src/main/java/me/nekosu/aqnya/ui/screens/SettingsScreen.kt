@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.ViewQuilt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.ChevronRight
@@ -57,7 +58,6 @@ import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.LogUtils
 import me.nekosu.aqnya.util.NavBarStyle
-import androidx.compose.material.icons.automirrored.outlined.ViewQuilt
 
 enum class ThemeMode(
     @param:StringRes val titleRes: Int,
@@ -210,7 +210,7 @@ fun SettingsScreen(navController: NavController) {
                     Modifier
                         .fillMaxWidth()
                         .clickable { navBarStyleMenuExpanded = true },
-leadingContent = { Icon(Icons.AutoMirrored.Outlined.ViewQuilt, contentDescription = null) },
+                leadingContent = { Icon(Icons.AutoMirrored.Outlined.ViewQuilt, contentDescription = null) },
                 headlineContent = {
                     Text(
                         stringResource(R.string.navbar_style_title),
