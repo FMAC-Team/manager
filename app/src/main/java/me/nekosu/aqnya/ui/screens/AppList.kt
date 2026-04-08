@@ -252,7 +252,12 @@ var searchQuery: String
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
             if (!forceRefresh) {
-                val cached = prefs.getString("apps_cache", null)
+            val versionCode = context.packageManager
+    .getPackageInfo(context.packageName, 0).longVersionCode
+val cacheKey = "apps_cache_$versionCode"
+
+val cached = prefs.getString(cacheKey, null)
+
                 if (cached != null) {
                     val type = object : TypeToken<List<AppInfo>>() {}.type
                     allApps = gson.fromJson(cached, type)
