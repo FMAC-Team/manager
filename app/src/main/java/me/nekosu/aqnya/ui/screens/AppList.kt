@@ -618,14 +618,10 @@ fun AppInfoItem(
                 .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AppIcon(
-                packageName = app.packageName,
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            )
-
+AppIcon(
+    packageName = app.packageName,
+    modifier = Modifier.size(44.dp),
+)
             Spacer(Modifier.width(16.dp))
 
             Column(
