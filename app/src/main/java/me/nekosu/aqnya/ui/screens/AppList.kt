@@ -58,6 +58,7 @@ import kotlinx.coroutines.withContext
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
+import android.graphics.Bitmap
 
 enum class LinuxCap(
     val value: Int,
@@ -709,6 +710,7 @@ fun AppIcon(
                         context.packageManager
                             .getApplicationIcon(packageName)
                             .toBitmap()
+                            .copy(Bitmap.Config.ARGB_8888, false)
                             .asImageBitmap()
                     iconCache.put(packageName, bitmap)
                     iconBitmap = bitmap
