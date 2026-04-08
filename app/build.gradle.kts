@@ -3,6 +3,19 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+
+fun gitCommitCount(): Int =
+    ProcessBuilder("git", "rev-list", "--count", "HEAD")
+        .directory(rootDir)
+        .start()
+        .inputStream.bufferedReader().readText().trim().toInt()
+
+fun gitCommitHash(): String =
+    ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+        .directory(rootDir)
+        .start()
+        .inputStream.bufferedReader().readText().trim()
+
 android {
     namespace = "me.nekosu.aqnya"
     compileSdk {
@@ -16,8 +29,8 @@ android {
         applicationId = "me.nekosu.aqnya"
         minSdk = 27
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+versionCode = gitCommitCount()
+    versionName = gitCommitHash()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
