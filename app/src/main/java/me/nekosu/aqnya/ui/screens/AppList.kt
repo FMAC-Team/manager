@@ -684,20 +684,6 @@ fun AppInfoItem(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if (app.isSystem) {
-                        Surface(
-                            shape = RoundedCornerShape(4.dp),
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                        ) {
-                            Text(
-                                text = "系统",
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                        }
-                    }
                 }
 
                 Text(
