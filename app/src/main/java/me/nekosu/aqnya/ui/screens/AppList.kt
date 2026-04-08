@@ -708,7 +708,7 @@ fun AppInfoItem(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (isAllowed && config != null && config.caps.isNotEmpty()) {
+                if (isAllowed && config.caps.isNotEmpty()) {
                     val capsText =
                         config.caps.take(3).joinToString(" · ") { it.label } +
                             if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
