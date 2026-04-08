@@ -35,6 +35,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -71,10 +73,11 @@ import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
+import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
 
 @Composable
-fun BottomNavigationBar(
+fun FloatingBottomNavigationBar(
     navController: NavController,
     items: List<BottomNavItem>,
 ) {
@@ -183,6 +186,52 @@ fun BottomNavigationBar(
     }
 }
 
+@Composable
+fun NormalBottomNavigationBar(
+    navController: NavController,
+    items: List<BottomNavItem>,
+) {
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    NavigationBar {
+        items.forEach { item ->
+            val selected = currentRoute == item.route
+            NavigationBarItem(
+                selected = selected,
+                onClick = {
+                    navController.navigate(item.route) {
+                        launchSingleTop = true
+                        restoreState = true
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                    }
+                },
+                icon = {
+                    Icon(
+                        imageVector = if (selected) item.selectedIcon else item.unselectedIcon,
+                        contentDescription = item.title,
+                    )
+                },
+                label = { Text(item.title) },
+            )
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(
+    navController: NavController,
+    items: List<BottomNavItem>,
+    style: NavBarStyle,
+) {
+    when (style) {
+        NavBarStyle.FLOATING -> FloatingBottomNavigationBar(navController, items)
+        NavBarStyle.NORMAL   -> NormalBottomNavigationBar(navController, items)
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen() {
@@ -191,6 +240,9 @@ fun MainScreen() {
     var showKeyDialog by remember { mutableStateOf(false) }
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
     val navItems = remember(showRules) { BottomNavItem.items(showRules) }
+
+    val navBarStyleValue by DebugPreferences.navBarStyleFlow(context).collectAsState(initial = 0)
+    val navBarStyle = NavBarStyle.fromValue(navBarStyleValue)
 
     val miuiAppsPermState = rememberPermissionState(AppPermission.MIUI_GET_INSTALLED_APPS)
 
@@ -227,7 +279,19 @@ fun MainScreen() {
         }
     }
 
-    Scaffold { innerPadding ->
+    Scaffold(
+        bottomBar = {
+            if (showBottomBar && navBarStyle == NavBarStyle.NORMAL) {
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn(tween(200)) + slideInVertically { it },
+                    exit = fadeOut(tween(150)) + slideOutVertically { it },
+                ) {
+                    NormalBottomNavigationBar(navController, navItems)
+                }
+            }
+        }
+    ) { innerPadding ->
         Box(
             modifier =
                 Modifier
@@ -324,7 +388,6 @@ fun MainScreen() {
                     DebugSettingsScreen(navController)
                 }
 
-                // 详情页路由
                 composable("app_detail/{packageName}") { backStackEntry ->
                     val pkg = backStackEntry.arguments?.getString("packageName")!!
                     val appViewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context.applicationContext))
@@ -340,7 +403,6 @@ fun MainScreen() {
                             navController = navController,
                         )
                     } else {
-                        // 如果应用信息尚未加载（例如通过深层链接进入），则返回
                         LaunchedEffect(Unit) {
                             appViewModel.loadApps()
                             if (appViewModel.allApps.none { it.packageName == pkg }) {
@@ -359,13 +421,15 @@ fun MainScreen() {
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
-            AnimatedVisibility(
-                visible = showBottomBar,
-                enter = fadeIn(tween(200)) + slideInVertically { it },
-                exit = fadeOut(tween(150)) + slideOutVertically { it },
-                modifier = Modifier.align(Alignment.BottomCenter),
-            ) {
-                BottomNavigationBar(navController, navItems)
+            if (navBarStyle == NavBarStyle.FLOATING) {
+                AnimatedVisibility(
+                    visible = showBottomBar,
+                    enter = fadeIn(tween(200)) + slideInVertically { it },
+                    exit = fadeOut(tween(150)) + slideOutVertically { it },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    FloatingBottomNavigationBar(navController, navItems)
+                }
             }
         }
     }

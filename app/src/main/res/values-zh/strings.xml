@@ -29,4 +29,7 @@
     <string name="theme_system">跟随系统</string>
     <string name="theme_light">浅色</string>
     <string name="theme_dark">深色</string>
+    <string name="navbar_style_title">导航栏样式</string>
+    <string name="navbar_style_floating">悬浮</string>
+    <string name="navbar_style_normal">普通</string>
 </resources>

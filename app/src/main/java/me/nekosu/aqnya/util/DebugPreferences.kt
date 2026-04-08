@@ -15,6 +15,15 @@ val Context.debugDataStore: DataStore<Preferences> by preferencesDataStore(name 
 object DebugPreferences {
     val KEY_SHOW_RULES = booleanPreferencesKey("debug_show_rules")
     val KEY_THEME_MODE = intPreferencesKey("theme_mode")
+private val NAV_BAR_STYLE_KEY = intPreferencesKey("nav_bar_style")
+
+ fun navBarStyleFlow(context: Context): Flow<Int> =
+    context.debugDataStore.data.map { it[NAV_BAR_STYLE_KEY] ?: 0 }
+
+ suspend fun setNavBarStyle(context: Context, value: Int) {
+     context.debugDataStore.edit { it[NAV_BAR_STYLE_KEY] = value }
+ }
+
 
     fun showRulesFlow(context: Context): Flow<Boolean> = context.debugDataStore.data.map { it[KEY_SHOW_RULES] ?: false }
 

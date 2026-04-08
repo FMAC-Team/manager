@@ -31,5 +31,8 @@
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="navbar_style_title">Navigation Bar Style</string>
+    <string name="navbar_style_floating">Floating</string>
+    <string name="navbar_style_normal">Normal</string>
 
 </resources>

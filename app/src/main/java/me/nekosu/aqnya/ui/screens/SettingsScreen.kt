@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.ViewQuilt
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -56,6 +57,7 @@ import kotlinx.coroutines.launch
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.LogUtils
+import me.nekosu.aqnya.util.NavBarStyle
 
 enum class ThemeMode(
     @param:StringRes val titleRes: Int,
@@ -82,6 +84,10 @@ fun SettingsScreen(navController: NavController) {
     val themeValue by DebugPreferences.themeModeFlow(mContext).collectAsState(initial = 0)
     val currentThemeMode = ThemeMode.fromValue(themeValue)
     var themeMenuExpanded by remember { mutableStateOf(false) }
+
+    val navBarStyleValue by DebugPreferences.navBarStyleFlow(mContext).collectAsState(initial = 0)
+    val currentNavBarStyle = NavBarStyle.fromValue(navBarStyleValue)
+    var navBarStyleMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -153,6 +159,7 @@ fun SettingsScreen(navController: NavController) {
                 supportingContent = { Text("开发者调试选项") },
                 trailingContent = { Icon(Icons.Outlined.ChevronRight, contentDescription = null) },
             )
+
             ListItem(
                 modifier =
                     Modifier
@@ -197,6 +204,52 @@ fun SettingsScreen(navController: NavController) {
                     }
                 },
             )
+
+            ListItem(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navBarStyleMenuExpanded = true },
+                leadingContent = { Icon(Icons.Outlined.ViewQuilt, contentDescription = null) },
+                headlineContent = {
+                    Text(
+                        stringResource(R.string.navbar_style_title),
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                },
+                supportingContent = { Text(stringResource(currentNavBarStyle.titleRes)) },
+                trailingContent = {
+                    Box {
+                        DropdownMenu(
+                            expanded = navBarStyleMenuExpanded,
+                            onDismissRequest = { navBarStyleMenuExpanded = false },
+                            shape = RoundedCornerShape(16.dp),
+                        ) {
+                            NavBarStyle.entries.forEach { style ->
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(style.titleRes)) },
+                                    onClick = {
+                                        navBarStyleMenuExpanded = false
+                                        scope.launch {
+                                            DebugPreferences.setNavBarStyle(mContext, style.value)
+                                        }
+                                    },
+                                    trailingIcon = {
+                                        if (currentNavBarStyle == style) {
+                                            Icon(
+                                                Icons.Default.Check,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp),
+                                            )
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+
             Spacer(modifier = Modifier.weight(1f))
         }
     }

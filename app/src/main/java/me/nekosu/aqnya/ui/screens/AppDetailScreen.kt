@@ -368,7 +368,6 @@ fun AppDetailScreen(
                                 },
                         ),
                     onClick = {
-                        // 修复：点击时显示对话框，而非导航到错误路由
                         if (allowed) {
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             showCapsDialog = true

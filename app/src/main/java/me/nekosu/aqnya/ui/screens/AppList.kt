@@ -204,14 +204,14 @@ class AppViewModel(
                             FilterMode.SYSTEM -> app.isSystem
                             FilterMode.USER -> !app.isSystem
                         }
-                    val passSearch =
-                        q.isEmpty() ||
-                            app.name.lowercase().contains(q) ||
-                            app.packageName.lowercase().contains(q)
+val passSearch =
+    q.isEmpty() ||
+        (app.name?.lowercase()?.contains(q) == true) ||
+        app.packageName.lowercase().contains(q)
                     passFilter && passSearch
                 }.sortedWith(
                     compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
-                        .thenBy { it.name.lowercase() },
+                        .thenBy { it.name?.lowercase() ?: "" },
                 )
     }
 
