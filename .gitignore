@@ -9,3 +9,5 @@ captures
 .cxx
 release.keystore
 ktlint
+app/src/main/jniLibs/
+.kotlin/
