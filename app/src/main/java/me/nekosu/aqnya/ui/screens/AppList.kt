@@ -150,15 +150,21 @@ class AppViewModel(
 
     val listState = LazyListState()
 
-private var _filterMode = mutableStateOf(FilterMode.USER)
-var filterMode: FilterMode
-    get() = _filterMode.value
-    set(value) { _filterMode.value = value; updateFilteredApps() }
+    private var _filterMode = mutableStateOf(FilterMode.USER)
+    var filterMode: FilterMode
+        get() = _filterMode.value
+        set(value) {
+            _filterMode.value = value
+            updateFilteredApps()
+        }
 
-private var _searchQuery = mutableStateOf("")
-var searchQuery: String
-    get() = _searchQuery.value
-    set(value) { _searchQuery.value = value; updateFilteredApps() }
+    private var _searchQuery = mutableStateOf("")
+    var searchQuery: String
+        get() = _searchQuery.value
+        set(value) {
+            _searchQuery.value = value
+            updateFilteredApps()
+        }
 
     var isSearching by mutableStateOf(false)
 
@@ -188,22 +194,25 @@ var searchQuery: String
     private fun updateFilteredApps() {
         val snapshot = appConfigs
         val q = searchQuery.trim().lowercase()
-        filteredApps = allApps
-            .filter { app ->
-                val passFilter = when (filterMode) {
-                    FilterMode.ALL -> true
-                    FilterMode.LAUNCHABLE -> app.isLaunchable
-                    FilterMode.SYSTEM -> app.isSystem
-                    FilterMode.USER -> !app.isSystem
-                }
-                val passSearch = q.isEmpty() ||
-                    app.name.lowercase().contains(q) ||
-                    app.packageName.lowercase().contains(q)
-                passFilter && passSearch
-            }.sortedWith(
-                compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
-                    .thenBy { it.name.lowercase() }
-            )
+        filteredApps =
+            allApps
+                .filter { app ->
+                    val passFilter =
+                        when (filterMode) {
+                            FilterMode.ALL -> true
+                            FilterMode.LAUNCHABLE -> app.isLaunchable
+                            FilterMode.SYSTEM -> app.isSystem
+                            FilterMode.USER -> !app.isSystem
+                        }
+                    val passSearch =
+                        q.isEmpty() ||
+                            app.name.lowercase().contains(q) ||
+                            app.packageName.lowercase().contains(q)
+                    passFilter && passSearch
+                }.sortedWith(
+                    compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
+                        .thenBy { it.name.lowercase() },
+                )
     }
 
     private suspend fun loadAppConfigs() {
@@ -252,11 +261,13 @@ var searchQuery: String
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
             if (!forceRefresh) {
-            val versionCode = context.packageManager
-    .getPackageInfo(context.packageName, 0).longVersionCode
-val cacheKey = "apps_cache_$versionCode"
+                val versionCode =
+                    context.packageManager
+                        .getPackageInfo(context.packageName, 0)
+                        .longVersionCode
+                val cacheKey = "apps_cache_$versionCode"
 
-val cached = prefs.getString(cacheKey, null)
+                val cached = prefs.getString(cacheKey, null)
 
                 if (cached != null) {
                     val type = object : TypeToken<List<AppInfo>>() {}.type
