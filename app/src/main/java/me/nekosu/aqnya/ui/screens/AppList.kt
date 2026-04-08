@@ -204,10 +204,10 @@ class AppViewModel(
                             FilterMode.SYSTEM -> app.isSystem
                             FilterMode.USER -> !app.isSystem
                         }
-val passSearch =
-    q.isEmpty() ||
-        (app.name?.lowercase()?.contains(q) == true) ||
-        app.packageName.lowercase().contains(q)
+                    val passSearch =
+                        q.isEmpty() ||
+                            (app.name?.lowercase()?.contains(q) == true) ||
+                            app.packageName.lowercase().contains(q)
                     passFilter && passSearch
                 }.sortedWith(
                     compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
@@ -258,8 +258,7 @@ val passSearch =
         }
     }
 
-    private fun appsCacheFile(versionCode: Long) =
-        java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
+    private fun appsCacheFile(versionCode: Long) = java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -300,9 +299,10 @@ val passSearch =
                         }
                     }.sortedBy { it.name.lowercase() }
             isLoaded = true
-            context.cacheDir.listFiles { f ->
-                f.name.startsWith("apps_cache_") && f.name.endsWith(".json")
-            }?.forEach { it.delete() }
+            context.cacheDir
+                .listFiles { f ->
+                    f.name.startsWith("apps_cache_") && f.name.endsWith(".json")
+                }?.forEach { it.delete() }
             appsCacheFile(versionCode).writeText(gson.toJson(allApps))
             loadAppConfigs()
         }

@@ -228,7 +228,7 @@ fun BottomNavigationBar(
 ) {
     when (style) {
         NavBarStyle.FLOATING -> FloatingBottomNavigationBar(navController, items)
-        NavBarStyle.NORMAL   -> NormalBottomNavigationBar(navController, items)
+        NavBarStyle.NORMAL -> NormalBottomNavigationBar(navController, items)
     }
 }
 
@@ -290,7 +290,7 @@ fun MainScreen() {
                     NormalBottomNavigationBar(navController, navItems)
                 }
             }
-        }
+        },
     ) { innerPadding ->
         Box(
             modifier =
