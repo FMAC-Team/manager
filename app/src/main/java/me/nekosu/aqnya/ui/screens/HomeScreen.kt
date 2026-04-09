@@ -22,16 +22,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.PhoneAndroid
-import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -42,10 +39,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,12 +57,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.DebugPreferences
-import me.nekosu.aqnya.util.RootDbHelper
-import me.nekosu.aqnya.util.RuleDbHelper
 import me.nekosu.aqnya.util.getAppVersion
 
 enum class InstallStatus {
@@ -79,39 +69,17 @@ enum class InstallStatus {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    viewModel: HomeViewModel,
     onNavigateToApps: () -> Unit = {},
     onNavigateToRules: () -> Unit = {},
 ) {
     val context = LocalContext.current
     var showInstallSheet by remember { mutableStateOf(false) }
-    var installStatus by remember { mutableStateOf(InstallStatus.CHECKING) }
-    var suCount by remember { mutableIntStateOf(0) }
-    var ruleCount by remember { mutableIntStateOf(0) }
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
 
-    LaunchedEffect(Unit) {
-        installStatus =
-            withContext(Dispatchers.IO) {
-                val result = ncore().ctl(1)
-                if (result == 0) {
-                    ncore().ctl(3)
-                    InstallStatus.INSTALLED
-                } else {
-                    InstallStatus.NOT_INSTALLED
-                }
-            }
-    }
-
-    LaunchedEffect(installStatus) {
-        if (installStatus == InstallStatus.INSTALLED) {
-            withContext(Dispatchers.IO) {
-                val rootDb = RootDbHelper(context)
-                val ruleDb = RuleDbHelper(context)
-                suCount = rootDb.getAllowedCount()
-                ruleCount = ruleDb.getCount()
-            }
-        }
-    }
+    val installStatus by viewModel.installStatus.collectAsState()
+    val suCount by viewModel.suCount.collectAsState()
+    val ruleCount by viewModel.ruleCount.collectAsState()
 
     Scaffold(
         topBar = {
@@ -176,7 +144,7 @@ fun HomeScreen(
     }
 
     if (showInstallSheet) {
-        ncore().helloLog()
+        me.nekosu.aqnya.ncore().helloLog()
     }
 }
 
@@ -518,6 +486,5 @@ fun DeviceInfoItem(
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme {
-        HomeScreen()
     }
 }

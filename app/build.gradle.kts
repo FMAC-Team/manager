@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    kotlin("plugin.serialization") version embeddedKotlinVersion
 }
 
 
@@ -29,8 +30,8 @@ android {
         applicationId = "me.nekosu.aqnya"
         minSdk = 27
         targetSdk = 36
-versionCode = gitCommitCount()
-    versionName = gitCommitHash()
+        versionCode = gitCommitCount()
+        versionName = gitCommitHash()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -39,29 +40,28 @@ versionCode = gitCommitCount()
         }
     }
 
-sourceSets {
-    getByName("main") {
-        @Suppress("DEPRECATION")
-        jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
+    sourceSets {
+        getByName("main") {
+            @Suppress("DEPRECATION")
+            jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
+        }
     }
-}
-    
-    signingConfigs {
-    create("debugKey") {
-        storeFile = file("${rootDir}/debug.keystore")
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-    }
-}
 
+    signingConfigs {
+        create("debugKey") {
+            storeFile = file("${rootDir}/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
 
     buildTypes {
-    debug {
-        signingConfig = signingConfigs.getByName("debugKey")
-    }
+        debug {
+            signingConfig = signingConfigs.getByName("debugKey")
+        }
         release {
-        signingConfig = signingConfigs.getByName("debugKey")
+            signingConfig = signingConfigs.getByName("debugKey")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -92,10 +92,10 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.gson)
     implementation(libs.okhttp)
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
+    implementation(libs.kotlinx.serialization.json)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

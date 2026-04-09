@@ -51,11 +51,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.SetSerializer
+import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.json.Json
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
@@ -119,6 +122,7 @@ val DEFAULT_CAPS: Set<LinuxCap> =
         LinuxCap.CAP_SYS_ADMIN,
     )
 
+@Serializable
 data class AppInfo(
     val name: String,
     val packageName: String,
@@ -141,11 +145,12 @@ enum class FilterMode(
     USER(R.string.user_app),
 }
 
+private val json = Json { ignoreUnknownKeys = true }
+
 class AppViewModel(
     private val context: Context,
 ) : ViewModel() {
     private val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
-    private val gson = Gson()
     private val dbHelper = RootDbHelper(context)
 
     val listState = LazyListState()
@@ -206,12 +211,12 @@ class AppViewModel(
                         }
                     val passSearch =
                         q.isEmpty() ||
-                            (app.name?.lowercase()?.contains(q) == true) ||
+                            app.name.lowercase().contains(q) ||
                             app.packageName.lowercase().contains(q)
                     passFilter && passSearch
                 }.sortedWith(
                     compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
-                        .thenBy { it.name?.lowercase() ?: "" },
+                        .thenBy { it.name.lowercase() },
                 )
     }
 
@@ -226,8 +231,10 @@ class AppViewModel(
                     val caps =
                         if (capsJson != null) {
                             try {
-                                val type = object : TypeToken<Set<String>>() {}.type
-                                val capLabels = gson.fromJson<Set<String>>(capsJson, type)
+                                val capLabels = json.decodeFromString(
+                                    SetSerializer(String.serializer()),
+                                    capsJson,
+                                )
                                 LinuxCap.entries.filter { it.label in capLabels }.toSet()
                             } catch (_: Exception) {
                                 DEFAULT_CAPS
@@ -258,7 +265,8 @@ class AppViewModel(
         }
     }
 
-    private fun appsCacheFile(versionCode: Long) = java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
+    private fun appsCacheFile(versionCode: Long) =
+        java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -271,8 +279,10 @@ class AppViewModel(
                 val cacheFile = appsCacheFile(versionCode)
                 if (cacheFile.exists()) {
                     try {
-                        val type = object : TypeToken<List<AppInfo>>() {}.type
-                        allApps = gson.fromJson(cacheFile.readText(), type) ?: emptyList()
+                        allApps = json.decodeFromString(
+                            ListSerializer(AppInfo.serializer()),
+                            cacheFile.readText(),
+                        ).filter { it.packageName.isNotBlank() }
                         isLoaded = true
                         if (allApps.isNotEmpty()) {
                             loadAppConfigs()
@@ -283,6 +293,7 @@ class AppViewModel(
                     }
                 }
             }
+
             val pm = context.packageManager
             allApps =
                 pm
@@ -290,7 +301,8 @@ class AppViewModel(
                     .mapNotNull { pkg ->
                         pkg.applicationInfo?.let { ai ->
                             AppInfo(
-                                name = ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() } ?: pkg.packageName,
+                                name = ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() }
+                                    ?: pkg.packageName,
                                 packageName = pkg.packageName,
                                 uid = ai.uid,
                                 isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
@@ -303,7 +315,9 @@ class AppViewModel(
                 .listFiles { f ->
                     f.name.startsWith("apps_cache_") && f.name.endsWith(".json")
                 }?.forEach { it.delete() }
-            appsCacheFile(versionCode).writeText(gson.toJson(allApps))
+            appsCacheFile(versionCode).writeText(
+                json.encodeToString(ListSerializer(AppInfo.serializer()), allApps),
+            )
             loadAppConfigs()
         }
     }
@@ -325,7 +339,10 @@ class AppViewModel(
 
             val nc = ncore()
             if (config.allowed) {
-                val capsJson = gson.toJson(config.caps.map { it.label }.toSet())
+                val capsJson = json.encodeToString(
+                    SetSerializer(String.serializer()),
+                    config.caps.map { it.label }.toSet(),
+                )
                 prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
 
                 nc.adduid(app.uid)
@@ -538,7 +555,10 @@ fun HistoryScreen(
                     ) {
                         if (allowedList.isNotEmpty()) {
                             item { SectionLabel("已授权  ·  ${allowedList.size}") }
-                            itemsIndexed(allowedList, key = { _, it -> "allowed_${it.packageName}" }) { index, app ->
+                            itemsIndexed(
+                                allowedList,
+                                key = { _, it -> "allowed_${it.packageName}" },
+                            ) { index, app ->
                                 AppInfoItem(
                                     app = app,
                                     config = viewModel.appConfigs[app.packageName],
@@ -553,7 +573,10 @@ fun HistoryScreen(
                         }
 
                         if (otherList.isNotEmpty()) {
-                            itemsIndexed(otherList, key = { _, it -> it.packageName }) { index, app ->
+                            itemsIndexed(
+                                otherList,
+                                key = { _, it -> it.packageName },
+                            ) { index, app ->
                                 AppInfoItem(
                                     app = app,
                                     config = null,
@@ -739,7 +762,7 @@ fun AppIcon(
                             .asImageBitmap()
                     iconCache.put(packageName, bitmap)
                     iconBitmap = bitmap
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                 }
             }
         }

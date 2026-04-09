@@ -9,7 +9,7 @@ activityCompose = "1.12.4"
 kotlin = "2.0.21"
 composeBom = "2024.09.00"
 navigation = "2.7.7"
-gson = "2.10.1"
+kotlinx-serialization = "1.10.0"
 moshi = "1.15.1"
 okhttp = "4.12.0"
 datastore = "1.1.1"
@@ -31,7 +31,7 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigation" }
 androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
-gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
 moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }

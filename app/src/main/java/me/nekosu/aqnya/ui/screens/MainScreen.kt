@@ -75,6 +75,7 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
+import android.app.Application
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -237,7 +238,10 @@ fun BottomNavigationBar(
 fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
-  //  var showKeyDialog by remember { mutableStateOf(false) }
+
+val homeViewModel: HomeViewModel = viewModel(
+    factory = HomeViewModelFactory(context.applicationContext as Application)
+)
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
     val navItems = remember(showRules) { BottomNavItem.items(showRules) }
 
@@ -261,9 +265,6 @@ fun MainScreen() {
     val showBottomBar = currentRoute in topLevelRoutes
 
     LaunchedEffect(Unit) {
-      /*  if (!KeyUtils.checkKeyExists(context)) {
-            showKeyDialog = true
-        }*/
         if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
             !MiuiPermissionUtils.isGranted(context)
         ) {
@@ -313,6 +314,7 @@ fun MainScreen() {
                     popExitTransition = { fadeOut(commonTween) },
                 ) {
                     HomeScreen(
+                    viewModel = homeViewModel,
                         onNavigateToApps = {
                             navController.navigate(BottomNavItem.History.route) {
                                 launchSingleTop = true
@@ -417,11 +419,6 @@ fun MainScreen() {
                 }
             }
 
-          /*  KeyInputDialog(
-                show = showKeyDialog,
-                onDismiss = { showKeyDialog = false },
-            )
-*/
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
             if (navBarStyle == NavBarStyle.FLOATING) {

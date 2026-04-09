@@ -36,9 +36,23 @@
 -keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
 -keepattributes AnnotationDefault, Signature, InnerClasses, EnclosingMethod
 
-# Gson
--keep class com.google.gson.reflect.TypeToken { *; }
--keep class * extends com.google.gson.reflect.TypeToken
+-keepattributes *Annotation*, InnerClasses
+-dontnote kotlinx.serialization.AnnotationsKt
+-keepclassmembers class kotlinx.serialization.json.** {
+    *** Companion;
+}
+-keepclasseswithmembers class kotlinx.serialization.json.** {
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keep,includedescriptorclasses class me.nekosu.aqnya.**$$serializer { *; }
+-keepclassmembers @kotlinx.serialization.Serializable class me.nekosu.aqnya.** {
+    *** Companion;
+    *** INSTANCE;
+    kotlinx.serialization.KSerializer serializer(...);
+}
+-keepclasseswithmembers @kotlinx.serialization.Serializable class me.nekosu.aqnya.** {
+    *;
+}
 
 
 -keep class me.nekosu.aqnya.KeyUtils {
