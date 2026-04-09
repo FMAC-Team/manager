@@ -2,6 +2,12 @@ package me.nekosu.aqnya.ui.screens
 
 import android.os.Build
 import android.widget.Toast
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -57,17 +63,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.getAppVersion
 
 enum class InstallStatus {
-    CHECKING,
     INSTALLED,
     NOT_INSTALLED,
 }
@@ -110,6 +109,7 @@ private fun ShimmerBox(
 @Composable
 private fun HomeScreenSkeleton(showRules: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,6 +131,7 @@ private fun HomeScreenSkeleton(showRules: Boolean) {
             }
         }
 
+        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -155,6 +156,7 @@ private fun HomeScreenSkeleton(showRules: Boolean) {
             }
         }
 
+        
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -201,6 +203,7 @@ fun HomeScreen(
     var showInstallSheet by remember { mutableStateOf(false) }
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
 
+    
     val installStatus by viewModel.installStatus.collectAsState()
     val suCount by viewModel.suCount.collectAsState()
     val ruleCount by viewModel.ruleCount.collectAsState()
@@ -231,11 +234,11 @@ fun HomeScreen(
                 .padding(bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (installStatus == InstallStatus.CHECKING) {
+            if (installStatus == null) {
                 HomeScreenSkeleton(showRules = showRules)
             } else {
                 StatusCard(
-                    status = installStatus,
+                    status = installStatus!!,
                     onClick = {
                         if (installStatus != InstallStatus.INSTALLED) {
                             showInstallSheet = true
@@ -297,27 +300,22 @@ fun StatusCard(
     val containerColor = when (status) {
         InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primaryContainer
         InstallStatus.NOT_INSTALLED -> notInstalledContainerColor
-        InstallStatus.CHECKING -> MaterialTheme.colorScheme.surfaceVariant
     }
     val contentColor = when (status) {
         InstallStatus.INSTALLED -> MaterialTheme.colorScheme.onPrimaryContainer
         InstallStatus.NOT_INSTALLED -> notInstalledContentColor
-        InstallStatus.CHECKING -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     val iconVector = when (status) {
         InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
         InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
-        InstallStatus.CHECKING -> Icons.Filled.SystemUpdate
     }
     val titleText = when (status) {
         InstallStatus.INSTALLED -> "已安装"
         InstallStatus.NOT_INSTALLED -> "未安装"
-        InstallStatus.CHECKING -> "检查中..."
     }
     val subText = when (status) {
         InstallStatus.INSTALLED -> "服务运行正常"
         InstallStatus.NOT_INSTALLED -> "点击安装"
-        InstallStatus.CHECKING -> "正在验证服务状态"
     }
 
     Box(

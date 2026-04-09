@@ -17,8 +17,8 @@ import me.nekosu.aqnya.util.RuleDbHelper
 class HomeViewModel(
     app: Application,
 ) : AndroidViewModel(app) {
-    private val _installStatus = MutableStateFlow(InstallStatus.CHECKING)
-    val installStatus: StateFlow<InstallStatus> = _installStatus
+    private val _installStatus = MutableStateFlow<InstallStatus?>(null)
+    val installStatus: StateFlow<InstallStatus?> = _installStatus
 
     private val _suCount = MutableStateFlow(0)
     val suCount: StateFlow<Int> = _suCount
