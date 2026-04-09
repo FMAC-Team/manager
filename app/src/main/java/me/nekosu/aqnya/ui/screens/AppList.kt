@@ -9,6 +9,9 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,10 +65,6 @@ import kotlinx.serialization.json.Json
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.ui.draw.clip
 
 enum class LinuxCap(
     val value: Int,
@@ -409,11 +408,17 @@ fun HistoryScreen(
     val scope = rememberCoroutineScope()
     val refreshState = rememberPullToRefreshState()
     val topCornerRadius by animateDpAsState(
-    targetValue = if (listState.firstVisibleItemIndex > 0 ||
-                      listState.firstVisibleItemScrollOffset > 0) 20.dp else 0.dp,
-    animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-    label = "listTopCorner",
-)
+        targetValue =
+            if (listState.firstVisibleItemIndex > 0 ||
+                listState.firstVisibleItemScrollOffset > 0
+            ) {
+                20.dp
+            } else {
+                0.dp
+            },
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label = "listTopCorner",
+    )
 
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
@@ -563,8 +568,10 @@ fun HistoryScreen(
 
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize()
-                        .clip(RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius)),
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .clip(RoundedCornerShape(topStart = topCornerRadius, topEnd = topCornerRadius)),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
                     ) {
