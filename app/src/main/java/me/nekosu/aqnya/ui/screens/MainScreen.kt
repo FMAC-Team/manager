@@ -346,7 +346,7 @@ fun MainScreen() {
                 ) {
                     HistoryScreen(
                         navController = navController,
-                        extraBottomPadding = if (navBarStyle == NavBarStyle.FLOATING) 96.dp else 0.dp,
+                        extraBottomPadding = if (navBarStyle == NavBarStyle.FLOATING) 96.dp else 12.dp,
                     )
                 }
 
