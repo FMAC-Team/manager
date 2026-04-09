@@ -14,8 +14,9 @@ import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
 import me.nekosu.aqnya.util.RuleDbHelper
 
-class HomeViewModel(app: Application) : AndroidViewModel(app) {
-
+class HomeViewModel(
+    app: Application,
+) : AndroidViewModel(app) {
     private val _installStatus = MutableStateFlow(InstallStatus.CHECKING)
     val installStatus: StateFlow<InstallStatus> = _installStatus
 
@@ -43,8 +44,9 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-class HomeViewModelFactory(private val app: Application) : ViewModelProvider.Factory {
+class HomeViewModelFactory(
+    private val app: Application,
+) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        HomeViewModel(app) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T = HomeViewModel(app) as T
 }

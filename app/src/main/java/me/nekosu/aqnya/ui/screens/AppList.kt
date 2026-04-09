@@ -231,10 +231,11 @@ class AppViewModel(
                     val caps =
                         if (capsJson != null) {
                             try {
-                                val capLabels = json.decodeFromString(
-                                    SetSerializer(String.serializer()),
-                                    capsJson,
-                                )
+                                val capLabels =
+                                    json.decodeFromString(
+                                        SetSerializer(String.serializer()),
+                                        capsJson,
+                                    )
                                 LinuxCap.entries.filter { it.label in capLabels }.toSet()
                             } catch (_: Exception) {
                                 DEFAULT_CAPS
@@ -265,8 +266,7 @@ class AppViewModel(
         }
     }
 
-    private fun appsCacheFile(versionCode: Long) =
-        java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
+    private fun appsCacheFile(versionCode: Long) = java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
 
     suspend fun loadApps(forceRefresh: Boolean = false) {
         withContext(Dispatchers.IO) {
@@ -279,10 +279,12 @@ class AppViewModel(
                 val cacheFile = appsCacheFile(versionCode)
                 if (cacheFile.exists()) {
                     try {
-                        allApps = json.decodeFromString(
-                            ListSerializer(AppInfo.serializer()),
-                            cacheFile.readText(),
-                        ).filter { it.packageName.isNotBlank() }
+                        allApps =
+                            json
+                                .decodeFromString(
+                                    ListSerializer(AppInfo.serializer()),
+                                    cacheFile.readText(),
+                                ).filter { it.packageName.isNotBlank() }
                         isLoaded = true
                         if (allApps.isNotEmpty()) {
                             loadAppConfigs()
@@ -301,8 +303,9 @@ class AppViewModel(
                     .mapNotNull { pkg ->
                         pkg.applicationInfo?.let { ai ->
                             AppInfo(
-                                name = ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() }
-                                    ?: pkg.packageName,
+                                name =
+                                    ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() }
+                                        ?: pkg.packageName,
                                 packageName = pkg.packageName,
                                 uid = ai.uid,
                                 isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
@@ -339,10 +342,11 @@ class AppViewModel(
 
             val nc = ncore()
             if (config.allowed) {
-                val capsJson = json.encodeToString(
-                    SetSerializer(String.serializer()),
-                    config.caps.map { it.label }.toSet(),
-                )
+                val capsJson =
+                    json.encodeToString(
+                        SetSerializer(String.serializer()),
+                        config.caps.map { it.label }.toSet(),
+                    )
                 prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
 
                 nc.adduid(app.uid)

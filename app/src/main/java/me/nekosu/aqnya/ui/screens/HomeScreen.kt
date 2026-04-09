@@ -144,7 +144,9 @@ fun HomeScreen(
     }
 
     if (showInstallSheet) {
-        me.nekosu.aqnya.ncore().helloLog()
+        me.nekosu.aqnya
+            .ncore()
+            .helloLog()
     }
 }
 

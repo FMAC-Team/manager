@@ -1,5 +1,6 @@
 package me.nekosu.aqnya.ui.screens
 
+import android.app.Application
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -75,7 +76,6 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
-import android.app.Application
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -239,9 +239,10 @@ fun MainScreen() {
     val navController = rememberNavController()
     val context = LocalContext.current
 
-val homeViewModel: HomeViewModel = viewModel(
-    factory = HomeViewModelFactory(context.applicationContext as Application)
-)
+    val homeViewModel: HomeViewModel =
+        viewModel(
+            factory = HomeViewModelFactory(context.applicationContext as Application),
+        )
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
     val navItems = remember(showRules) { BottomNavItem.items(showRules) }
 
@@ -314,7 +315,7 @@ val homeViewModel: HomeViewModel = viewModel(
                     popExitTransition = { fadeOut(commonTween) },
                 ) {
                     HomeScreen(
-                    viewModel = homeViewModel,
+                        viewModel = homeViewModel,
                         onNavigateToApps = {
                             navController.navigate(BottomNavItem.History.route) {
                                 launchSingleTop = true
