@@ -80,43 +80,46 @@ private fun ShimmerBox(
     val shimmerX by transition.animateFloat(
         initialValue = -1f,
         targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
+        animationSpec =
+            infiniteRepeatable(
+                animation = tween(1000, easing = LinearEasing),
+                repeatMode = RepeatMode.Restart,
+            ),
         label = "shimmerX",
     )
     val baseColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
     val highlightColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
 
     Box(
-        modifier = modifier
-            .clip(shape)
-            .drawBehind {
-                val w = size.width
-                val offset = shimmerX * w
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(baseColor, highlightColor, baseColor),
-                        start = Offset(offset - w, 0f),
-                        end = Offset(offset + w, 0f),
-                    ),
-                )
-            },
+        modifier =
+            modifier
+                .clip(shape)
+                .drawBehind {
+                    val w = size.width
+                    val offset = shimmerX * w
+                    drawRect(
+                        brush =
+                            Brush.linearGradient(
+                                colors = listOf(baseColor, highlightColor, baseColor),
+                                start = Offset(offset - w, 0f),
+                                end = Offset(offset + w, 0f),
+                            ),
+                    )
+                },
     )
 }
 
 @Composable
 private fun HomeScreenSkeleton(showRules: Boolean) {
     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(88.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .height(88.dp)
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
+                    .padding(20.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -131,19 +134,19 @@ private fun HomeScreenSkeleton(showRules: Boolean) {
             }
         }
 
-        
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             repeat(if (showRules) 2 else 1) {
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(90.dp)
-                        .clip(RoundedCornerShape(24.dp))
-                        .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
-                        .padding(20.dp),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .height(90.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
+                            .padding(20.dp),
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         ShimmerBox(
@@ -156,20 +159,21 @@ private fun HomeScreenSkeleton(showRules: Boolean) {
             }
         }
 
-        
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(28.dp))
-                .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f))
-                .padding(vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(28.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f))
+                    .padding(vertical = 8.dp),
         ) {
             Column {
                 repeat(4) { index ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 14.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 20.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         ShimmerBox(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp))
@@ -203,7 +207,6 @@ fun HomeScreen(
     var showInstallSheet by remember { mutableStateOf(false) }
     val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
 
-    
     val installStatus by viewModel.installStatus.collectAsState()
     val suCount by viewModel.suCount.collectAsState()
     val ruleCount by viewModel.ruleCount.collectAsState()
@@ -218,20 +221,22 @@ fun HomeScreen(
                         fontWeight = FontWeight.Bold,
                     )
                 },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface,
-                ),
+                colors =
+                    TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        titleContentColor = MaterialTheme.colorScheme.onSurface,
+                    ),
             )
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp, vertical = 12.dp)
-                .padding(bottom = 88.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             if (installStatus == null) {
@@ -290,72 +295,87 @@ fun StatusCard(
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     val notInstalledContainerColor =
-        if (isDark) MaterialTheme.colorScheme.errorContainer
-        else MaterialTheme.colorScheme.error
+        if (isDark) {
+            MaterialTheme.colorScheme.errorContainer
+        } else {
+            MaterialTheme.colorScheme.error
+        }
 
     val notInstalledContentColor =
-        if (isDark) MaterialTheme.colorScheme.onErrorContainer
-        else MaterialTheme.colorScheme.onError
+        if (isDark) {
+            MaterialTheme.colorScheme.onErrorContainer
+        } else {
+            MaterialTheme.colorScheme.onError
+        }
 
-    val containerColor = when (status) {
-        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primaryContainer
-        InstallStatus.NOT_INSTALLED -> notInstalledContainerColor
-    }
-    val contentColor = when (status) {
-        InstallStatus.INSTALLED -> MaterialTheme.colorScheme.onPrimaryContainer
-        InstallStatus.NOT_INSTALLED -> notInstalledContentColor
-    }
-    val iconVector = when (status) {
-        InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
-        InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
-    }
-    val titleText = when (status) {
-        InstallStatus.INSTALLED -> "已安装"
-        InstallStatus.NOT_INSTALLED -> "未安装"
-    }
-    val subText = when (status) {
-        InstallStatus.INSTALLED -> "服务运行正常"
-        InstallStatus.NOT_INSTALLED -> "点击安装"
-    }
+    val containerColor =
+        when (status) {
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.primaryContainer
+            InstallStatus.NOT_INSTALLED -> notInstalledContainerColor
+        }
+    val contentColor =
+        when (status) {
+            InstallStatus.INSTALLED -> MaterialTheme.colorScheme.onPrimaryContainer
+            InstallStatus.NOT_INSTALLED -> notInstalledContentColor
+        }
+    val iconVector =
+        when (status) {
+            InstallStatus.INSTALLED -> Icons.Filled.CheckCircle
+            InstallStatus.NOT_INSTALLED -> Icons.Filled.SystemUpdate
+        }
+    val titleText =
+        when (status) {
+            InstallStatus.INSTALLED -> "已安装"
+            InstallStatus.NOT_INSTALLED -> "未安装"
+        }
+    val subText =
+        when (status) {
+            InstallStatus.INSTALLED -> "服务运行正常"
+            InstallStatus.NOT_INSTALLED -> "点击安装"
+        }
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp)),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(28.dp)),
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
             onClick = onClick,
-            colors = CardDefaults.cardColors(
-                containerColor = containerColor.copy(alpha = 0.75f),
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = containerColor.copy(alpha = 0.75f),
+                ),
             shape = RoundedCornerShape(28.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(50.dp)
-                        .background(color = contentColor.copy(alpha = opacity), shape = CircleShape)
-                        .drawBehind {
-                            val glowRadius = size.minDimension / 1.8f
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(contentColor.copy(alpha = 0.45f), Color.Transparent),
-                                    center = center,
+                    modifier =
+                        Modifier
+                            .size(50.dp)
+                            .background(color = contentColor.copy(alpha = opacity), shape = CircleShape)
+                            .drawBehind {
+                                val glowRadius = size.minDimension / 1.8f
+                                drawCircle(
+                                    brush =
+                                        Brush.radialGradient(
+                                            colors = listOf(contentColor.copy(alpha = 0.45f), Color.Transparent),
+                                            center = center,
+                                            radius = glowRadius,
+                                        ),
                                     radius = glowRadius,
-                                ),
-                                radius = glowRadius,
-                            )
-                        }
-                        .background(color = contentColor.copy(alpha = opacity), shape = CircleShape),
+                                )
+                            }.background(color = contentColor.copy(alpha = opacity), shape = CircleShape),
                 ) {
                     Icon(
                         imageVector = iconVector,
@@ -383,20 +403,22 @@ fun StatusCard(
 
                 Box(
                     contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(30.dp)
-                        .background(color = contentColor.copy(alpha = opacity), shape = CircleShape)
-                        .drawBehind {
-                            val glowRadius = size.minDimension / 1.8f
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(contentColor.copy(alpha = 0.35f), Color.Transparent),
-                                    center = center,
+                    modifier =
+                        Modifier
+                            .size(30.dp)
+                            .background(color = contentColor.copy(alpha = opacity), shape = CircleShape)
+                            .drawBehind {
+                                val glowRadius = size.minDimension / 1.8f
+                                drawCircle(
+                                    brush =
+                                        Brush.radialGradient(
+                                            colors = listOf(contentColor.copy(alpha = 0.35f), Color.Transparent),
+                                            center = center,
+                                            radius = glowRadius,
+                                        ),
                                     radius = glowRadius,
-                                ),
-                                radius = glowRadius,
-                            )
-                        },
+                                )
+                            },
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowForwardIos,
@@ -423,14 +445,16 @@ fun StatCard(
         onClick = onClick,
         shape = RoundedCornerShape(24.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f),
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f),
+            ),
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
@@ -461,35 +485,39 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val appVersion = remember { getAppVersion(context) }
 
-    val items = listOf(
-        Triple(Icons.Filled.Memory, "内核版本", System.getProperty("os.version") ?: "Unavailable"),
-        Triple(Icons.Filled.Android, "Android 版本", Build.VERSION.RELEASE),
-        Triple(Icons.Filled.PhoneAndroid, "设备", "${Build.MANUFACTURER} ${Build.MODEL}"),
-        Triple(Icons.Filled.Settings, "管理器版本", appVersion),
-    )
+    val items =
+        listOf(
+            Triple(Icons.Filled.Memory, "内核版本", System.getProperty("os.version") ?: "Unavailable"),
+            Triple(Icons.Filled.Android, "Android 版本", Build.VERSION.RELEASE),
+            Triple(Icons.Filled.PhoneAndroid, "设备", "${Build.MANUFACTURER} ${Build.MODEL}"),
+            Triple(Icons.Filled.Settings, "管理器版本", appVersion),
+        )
 
     Box(modifier = modifier.clip(RoundedCornerShape(28.dp))) {
         Box(
-            modifier = Modifier
-                .matchParentSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                            Color.Transparent,
-                        ),
-                    ),
-                )
-                .blur(24.dp),
+            modifier =
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        brush =
+                            Brush.verticalGradient(
+                                colors =
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                        Color.Transparent,
+                                    ),
+                            ),
+                    ).blur(24.dp),
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
-            ),
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f),
+                ),
         ) {
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
                 items.forEachIndexed { index, (icon, title, value) ->
@@ -515,19 +543,21 @@ fun DeviceInfoItem(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 14.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(38.dp)
-                .background(
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
-                    shape = RoundedCornerShape(11.dp),
-                ),
+            modifier =
+                Modifier
+                    .size(38.dp)
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(11.dp),
+                    ),
         ) {
             Icon(
                 imageVector = icon,
