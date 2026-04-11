@@ -30,6 +30,7 @@ class _NavBarAppState extends State<NavBarApp> {
           if (mounted) setState(() => _dynamicScheme = _buildScheme(m));
       }
     });
+    _channel.invokeMethod('requestColors');
   }
 
   ColorScheme _buildScheme(Map<String, int> m) {

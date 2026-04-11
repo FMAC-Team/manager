@@ -48,14 +48,25 @@ fun FlutterNavBar(
         )
     }
 
-    DisposableEffect(channel) {
-        channel.setMethodCallHandler { call, _ ->
-            if (call.method == "onTabSelected") {
-                onTabSelected(call.arguments as Int)
-            }
+DisposableEffect(channel) {
+    val currentScheme = scheme
+    channel.setMethodCallHandler { call, _ ->
+        when (call.method) {
+            "onTabSelected" -> onTabSelected(call.arguments as Int)
+            "requestColors" -> channel.invokeMethod(
+                "setColors",
+                mapOf(
+                    "surfaceContainer"     to currentScheme.surfaceContainer.toArgb(),
+                    "secondaryContainer"   to currentScheme.secondaryContainer.toArgb(),
+                    "onSecondaryContainer" to currentScheme.onSecondaryContainer.toArgb(),
+                    "onSurfaceVariant"     to currentScheme.onSurfaceVariant.toArgb(),
+                    "surfaceTint"          to currentScheme.surfaceTint.toArgb(),
+                )
+            )
         }
-        onDispose { channel.setMethodCallHandler(null) }
     }
+    onDispose { channel.setMethodCallHandler(null) }
+}
 
     AndroidView(
         modifier = modifier.height(112.dp),
