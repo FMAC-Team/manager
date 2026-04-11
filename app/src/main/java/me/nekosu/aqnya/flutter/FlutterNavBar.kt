@@ -1,14 +1,15 @@
 package me.nekosu.aqnya.ui.navbar
 
+import android.graphics.Color
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import io.flutter.embedding.android.FlutterSurfaceView
+import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
-import androidx.compose.foundation.layout.height
 
 const val ENGINE_ID = "nav_engine"
 const val CHANNEL   = "nekosu.aqnya/navbar"
@@ -44,12 +45,17 @@ fun FlutterNavBar(
     AndroidView(
         modifier = modifier.height(112.dp),
         factory = { ctx ->
-            FlutterView(ctx, FlutterSurfaceView(ctx)).also { view ->
+            val textureView = FlutterTextureView(ctx).apply {
+                isOpaque = false 
+            }
+            
+            FlutterView(ctx, textureView).also { view ->
+                view.setBackgroundColor(Color.TRANSPARENT)
                 view.attachToFlutterEngine(engine)
             }
         },
         onRelease = { view ->
-            (view as? FlutterView)?.detachFromFlutterEngine()
+            view.detachFromFlutterEngine()
         }
     )
 }
