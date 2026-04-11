@@ -233,7 +233,6 @@ fun BottomNavigationBar(
         NavBarStyle.NORMAL -> NormalBottomNavigationBar(navController, items)
         NavBarStyle.FLUTTER -> {}
     }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
