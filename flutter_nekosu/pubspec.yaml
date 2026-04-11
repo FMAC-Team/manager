@@ -83,5 +83,5 @@ flutter:
   # identifiers, which may be completely independent or the same as these.
   module:
     androidX: true
-    androidPackage: com.example.flutter_nekosu
+    androidPackage: me.nekosu.flutter_nekosu
     iosBundleIdentifier: com.example.flutterNekosu

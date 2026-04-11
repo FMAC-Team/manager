@@ -96,7 +96,7 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
-    implementation("com.example.flutter_nekosu:flutter_release:1.0")
+    implementation("me.nekosu.flutter_nekosu:flutter_release:1.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
