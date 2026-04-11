@@ -96,6 +96,8 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
     implementation(libs.kotlinx.serialization.json)
+    implementation(fileTree("libs") { include("*.aar") })
+    implementation("io.flutter:flutter_embedding_release:1.0.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
