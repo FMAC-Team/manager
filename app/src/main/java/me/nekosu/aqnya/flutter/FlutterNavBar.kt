@@ -11,6 +11,7 @@ import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.material3.MaterialTheme
 
 const val ENGINE_ID = "nav_engine"
 const val CHANNEL = "nekosu.aqnya/navbar"
