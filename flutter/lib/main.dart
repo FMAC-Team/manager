@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'md3_pill_navbar.dart';
+import 'navbar.dart'; 
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -38,10 +38,12 @@ class _NavBarAppState extends State<NavBarApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
+        scaffoldBackgroundColor: Colors.transparent,
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6750A4)),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
+        scaffoldBackgroundColor: Colors.transparent,
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6750A4),
           brightness: Brightness.dark,
@@ -50,10 +52,10 @@ class _NavBarAppState extends State<NavBarApp> {
       themeMode: ThemeMode.system,
       home: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Md3PillNavBar(
+        body: ModernCapsuleNavBar( 
           selectedIndex: _selectedIndex,
           onTabSelected: _onTabSelected,
-          tabs: const [
+          tabs: const[
             NavBarTab(
               label: '主页',
               icon: Icon(Icons.home_outlined),
