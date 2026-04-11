@@ -77,6 +77,10 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -272,6 +276,18 @@ fun MainScreen() {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in topLevelRoutes
+    var navBarVisible by remember { mutableStateOf(true) }
+val nestedScrollConnection = remember {
+    object : NestedScrollConnection {
+        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
+            if (available.y < -8) navBarVisible = false
+            if (available.y > 8)  navBarVisible = true
+            return Offset.Zero
+        }
+    }
+}
+
+LaunchedEffect(currentRoute) { navBarVisible = true }
 
     LaunchedEffect(Unit) {
         if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
@@ -306,7 +322,8 @@ fun MainScreen() {
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .nestedScroll(nestedScrollConnection),
         ) {
             NavHost(
                 navController = navController,
@@ -450,6 +467,7 @@ fun MainScreen() {
                     FlutterNavBar(
                         modifier = Modifier.fillMaxWidth(),
                         selectedIndex = currentIndex,
+                        navBarVisible = navBarVisible,
                         onTabSelected = { i ->
                             navController.navigate(navItems[i].route) {
                                 launchSingleTop = true
