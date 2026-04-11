@@ -71,7 +71,7 @@ class _NavBarAppState extends State<NavBarApp> {
       darkTheme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.transparent,
-        colorScheme: _dynamicScheme ?? fallbackDark,
+        colorScheme: _dynamicScheme!,
       ),
       themeMode: ThemeMode.system,
       home: Scaffold(
