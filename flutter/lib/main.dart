@@ -43,7 +43,6 @@ class _NavBarAppState extends State<NavBarApp> {
       secondaryContainer:   c('secondaryContainer'),
       onSecondaryContainer: c('onSecondaryContainer'),
       onSurfaceVariant:     c('onSurfaceVariant'),
-      shadow:               c('shadow'),
       surfaceTint:          c('surfaceTint'),
     );
   }

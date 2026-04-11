@@ -43,7 +43,6 @@ fun FlutterNavBar(
                 "secondaryContainer" to scheme.secondaryContainer.toArgb(),
                 "onSecondaryContainer" to scheme.onSecondaryContainer.toArgb(),
                 "onSurfaceVariant" to scheme.onSurfaceVariant.toArgb(),
-                "shadow" to scheme.shadow.toArgb(),
                 "surfaceTint" to scheme.surfaceTint.toArgb(),
             ),
         )
