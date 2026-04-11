@@ -49,7 +49,7 @@ class ModernCapsuleNavBar extends StatelessWidget {
               AnimatedAlign(
                 alignment: Alignment(alignmentX, 0),
                 duration: const Duration(milliseconds: 400),
-                curve: Curves.easeOutBack, 
+                curve: Curves.easeOutCubic, 
                 child: FractionallySizedBox(
                   widthFactor: 1 / count,
                   child: Padding(
