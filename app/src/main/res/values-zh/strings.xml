@@ -32,4 +32,5 @@
     <string name="navbar_style_title">导航栏样式</string>
     <string name="navbar_style_floating">悬浮</string>
     <string name="navbar_style_normal">普通</string>
+    <string name="navbar_style_flutter">Flutter 液态玻璃</string>
 </resources>

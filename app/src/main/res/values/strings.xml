@@ -34,5 +34,6 @@
     <string name="navbar_style_title">Navigation Bar Style</string>
     <string name="navbar_style_floating">Floating</string>
     <string name="navbar_style_normal">Normal</string>
+    <string name="navbar_style_flutter">Flutter</string>
 
 </resources>

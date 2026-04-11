@@ -9,6 +9,7 @@ enum class NavBarStyle(
 ) {
     FLOATING(R.string.navbar_style_floating, 0),
     NORMAL(R.string.navbar_style_normal, 1),
+    FLUTTER(R.string.navbar_style_flutter, 2),
     ;
 
     companion object {

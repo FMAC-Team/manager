@@ -20,7 +20,7 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven {
-            url = uri("${rootDir}/flutter_nekosu/build/host/outputs/repo")
+            url = uri("${rootDir}/flutter/build/host/outputs/repo")
         }
         maven {
             url = uri("https://storage.googleapis.com/download.flutter.io")

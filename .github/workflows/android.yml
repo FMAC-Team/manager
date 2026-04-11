@@ -6,14 +6,14 @@ on:
     branches: [ "main" ]
     paths:
       - "app/src/**/*.kt"
-      - "flutter_nekosu/lib/**/*.dart"
+      - "flutter/lib/**/*.dart"
       - "build.gradle.kts"
       - "gradle/libs.versions.toml"
   pull_request:
     branches: [ "main" ]
     paths:
       - "app/src/**/*.kt"
-      - "flutter_nekosu/lib/**/*.dart"
+      - "flutter/lib/**/*.dart"
       - "build.gradle.kts"
       - "gradle/libs.versions.toml"
 
@@ -43,19 +43,19 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.pub-cache
-        key: pub-${{ hashFiles('flutter_nekosu/pubspec.lock') }}
+        key: pub-${{ hashFiles('flutter/pubspec.lock') }}
         restore-keys: pub-
 
     - name: Cache Flutter AAR
       id: cache-aar
       uses: actions/cache@v4
       with:
-        path: flutter_nekosu/build/host/outputs/repo
-        key: flutter-aar-${{ hashFiles('flutter_nekosu/pubspec.lock', 'flutter_nekosu/lib/**/*.dart') }}
+        path: flutter/build/host/outputs/repo
+        key: flutter-aar-${{ hashFiles('flutter/pubspec.lock', 'flutter/lib/**/*.dart') }}
 
     - name: Build Flutter AAR
       if: steps.cache-aar.outputs.cache-hit != 'true'
-      working-directory: flutter_nekosu
+      working-directory: flutter
       run: |
         flutter pub get
         flutter build aar --no-debug --no-profile

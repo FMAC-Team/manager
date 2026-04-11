@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -69,6 +70,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import me.nekosu.aqnya.KeyUtils
 import me.nekosu.aqnya.R
+import me.nekosu.aqnya.flutter.FlutterNavBar
 import me.nekosu.aqnya.util.AppPermission
 import me.nekosu.aqnya.util.BottomNavItem
 import me.nekosu.aqnya.util.CheckUpdate
@@ -228,8 +230,15 @@ fun BottomNavigationBar(
     style: NavBarStyle,
 ) {
     when (style) {
-        NavBarStyle.FLOATING -> FloatingBottomNavigationBar(navController, items)
-        NavBarStyle.NORMAL -> NormalBottomNavigationBar(navController, items)
+        NavBarStyle.FLOATING -> {
+            FloatingBottomNavigationBar(navController, items)
+        }
+
+        NavBarStyle.NORMAL -> {
+            NormalBottomNavigationBar(navController, items)
+        }
+
+        NavBarStyle.FLUTTER -> {} // Flutter 底栏在 Box 层叠，不走 Scaffold bottomBar
     }
 }
 
@@ -265,6 +274,8 @@ fun MainScreen() {
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in topLevelRoutes
 
+    val isFlutter = navBarStyle == NavBarStyle.FLUTTER
+
     LaunchedEffect(Unit) {
         if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
             !MiuiPermissionUtils.isGranted(context)
@@ -282,6 +293,7 @@ fun MainScreen() {
     }
 
     Scaffold(
+        contentWindowInsets = if (isFlutter) WindowInsets(0) else WindowInsets.safeDrawing,
         bottomBar = {
             if (showBottomBar && navBarStyle == NavBarStyle.NORMAL) {
                 AnimatedVisibility(
@@ -346,7 +358,12 @@ fun MainScreen() {
                 ) {
                     HistoryScreen(
                         navController = navController,
-                        extraBottomPadding = if (navBarStyle == NavBarStyle.FLOATING) 96.dp else 12.dp,
+                        extraBottomPadding =
+                            when (navBarStyle) {
+                                NavBarStyle.FLOATING -> 96.dp
+                                NavBarStyle.FLUTTER -> 100.dp
+                                NavBarStyle.NORMAL -> 12.dp
+                            },
                     )
                 }
 
@@ -396,7 +413,8 @@ fun MainScreen() {
 
                 composable("app_detail/{packageName}") { backStackEntry ->
                     val pkg = backStackEntry.arguments?.getString("packageName")!!
-                    val appViewModel: AppViewModel = viewModel(factory = AppViewModelFactory(context.applicationContext))
+                    val appViewModel: AppViewModel =
+                        viewModel(factory = AppViewModelFactory(context.applicationContext))
 
                     val app = appViewModel.allApps.find { it.packageName == pkg }
 
@@ -422,6 +440,7 @@ fun MainScreen() {
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
 
+            // FLOATING 原有底栏
             if (navBarStyle == NavBarStyle.FLOATING) {
                 AnimatedVisibility(
                     visible = showBottomBar,
@@ -430,6 +449,38 @@ fun MainScreen() {
                     modifier = Modifier.align(Alignment.BottomCenter),
                 ) {
                     FloatingBottomNavigationBar(navController, navItems)
+                }
+            }
+
+            // FLUTTER 液态玻璃底栏
+            if (isFlutter) {
+                AnimatedVisibility(
+                    visible = showBottomBar,
+                    enter = fadeIn(tween(200)) + slideInVertically { it },
+                    exit = fadeOut(tween(150)) + slideOutVertically { it },
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                ) {
+                    FlutterNavBar(
+                        selectedIndex =
+                            navItems
+                                .indexOfFirst { it.route == currentRoute }
+                                .coerceAtLeast(0),
+                        onTabSelected = { index ->
+                            navItems.getOrNull(index)?.route?.let { route ->
+                                navController.navigate(route) {
+                                    launchSingleTop = true
+                                    restoreState = true
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
+                                    }
+                                }
+                            }
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                    )
                 }
             }
         }
