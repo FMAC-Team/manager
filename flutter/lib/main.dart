@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'md3_pill_navbar.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await LiquidGlassWidgets.initialize();
-  runApp(LiquidGlassWidgets.wrap(const NavBarApp()));
+  runApp(const NavBarApp());
 }
 
 class NavBarApp extends StatefulWidget {
@@ -16,17 +15,21 @@ class NavBarApp extends StatefulWidget {
 
 class _NavBarAppState extends State<NavBarApp> {
   int _selectedIndex = 0;
-  late MethodChannel _channel;
+  static const _channel = MethodChannel('nekosu.aqnya/navbar');
 
   @override
   void initState() {
     super.initState();
-    _channel = const MethodChannel('nav_channel');
     _channel.setMethodCallHandler((call) async {
-      if (call.method == 'setIndex') {
+      if (call.method == 'setIndex' && mounted) {
         setState(() => _selectedIndex = call.arguments as int);
       }
     });
+  }
+
+  void _onTabSelected(int i) {
+    setState(() => _selectedIndex = i);
+    _channel.invokeMethod('onTabSelected', i);
   }
 
   @override
@@ -34,26 +37,38 @@ class _NavBarAppState extends State<NavBarApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-      useMaterial3: true,
-      canvasColor: Colors.transparent, 
-      scaffoldBackgroundColor: Colors.transparent,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: Colors.blue,
-        background: Colors.transparent,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF6750A4)),
       ),
-    ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF6750A4),
+          brightness: Brightness.dark,
+        ),
+      ),
+      themeMode: ThemeMode.system,
       home: Scaffold(
         backgroundColor: Colors.transparent,
-        body: GlassBottomBar(
+        body: Md3PillNavBar(
           selectedIndex: _selectedIndex,
-          onTabSelected: (i) {
-            setState(() => _selectedIndex = i);
-            _channel.invokeMethod('onTabSelected', i);
-          },
+          onTabSelected: _onTabSelected,
           tabs: const [
-            GlassBottomBarTab(label: '主页', icon: Icon(Icons.home_rounded)),
-            GlassBottomBarTab(label: '应用', icon: Icon(Icons.apps_rounded)),
-            GlassBottomBarTab(label: '设置', icon: Icon(Icons.settings_rounded)),
+            NavBarTab(
+              label: '主页',
+              icon: Icon(Icons.home_outlined),
+              activeIcon: Icon(Icons.home_rounded),
+            ),
+            NavBarTab(
+              label: '应用',
+              icon: Icon(Icons.apps_outlined),
+              activeIcon: Icon(Icons.apps_rounded),
+            ),
+            NavBarTab(
+              label: '设置',
+              icon: Icon(Icons.settings_outlined),
+              activeIcon: Icon(Icons.settings_rounded),
+            ),
           ],
         ),
       ),
