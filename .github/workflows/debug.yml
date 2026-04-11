@@ -38,7 +38,7 @@ jobs:
         cache: true
         
     - name: Build Flutter AAR
-      working-directory: flutter_nekosu
+      working-directory: flutter
       run: |
         flutter pub get
         flutter build aar --debug
