@@ -55,11 +55,12 @@ class _NavBarAppState extends State<NavBarApp> {
 
   @override
   Widget build(BuildContext context) {
-    final fallback = ColorScheme.fromSeed(seedColor: const Color(0xFF6750A4));
-    final fallbackDark = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF6750A4),
-      brightness: Brightness.dark,
+   if (_dynamicScheme == null) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(backgroundColor: Colors.transparent),
     );
+  }
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
