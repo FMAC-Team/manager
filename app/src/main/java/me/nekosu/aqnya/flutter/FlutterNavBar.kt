@@ -76,7 +76,7 @@ fun FlutterNavBar(
     }
 
     AndroidView(
-        modifier = modifier.height(112.dp),
+        modifier = modifier.height(if (navBarVisible) 112.dp else 0.dp),
         factory = { ctx ->
             val textureView =
                 FlutterTextureView(ctx).apply {
