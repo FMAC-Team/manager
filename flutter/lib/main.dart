@@ -55,12 +55,9 @@ class _NavBarAppState extends State<NavBarApp> {
 
   @override
   Widget build(BuildContext context) {
-   if (_dynamicScheme == null) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: Scaffold(backgroundColor: Colors.transparent),
-    );
-  }
+if (_dynamicScheme == null) {
+      return const ColoredBox(color: Colors.transparent);
+    }
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
