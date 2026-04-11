@@ -20,7 +20,7 @@ const val CHANNEL = "nekosu.aqnya/navbar"
 fun FlutterNavBar(
     modifier: Modifier = Modifier,
     selectedIndex: Int = 0,
-    navBarVisible: Boolean = true,  
+    navBarVisible: Boolean = true,
     onTabSelected: (Int) -> Unit = {},
 ) {
     val engine =
@@ -35,7 +35,7 @@ fun FlutterNavBar(
         }
 
     val scheme = MaterialTheme.colorScheme
-    LaunchedEffect(selectedIndex, scheme.surfaceContainer,navBarVisible) {
+    LaunchedEffect(selectedIndex, scheme.surfaceContainer, navBarVisible) {
         channel.invokeMethod("setIndex", selectedIndex)
         channel.invokeMethod(
             "setColors",

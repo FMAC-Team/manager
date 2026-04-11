@@ -53,7 +53,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -77,10 +81,6 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -277,17 +277,21 @@ fun MainScreen() {
     val currentRoute = navBackStackEntry?.destination?.route
     val showBottomBar = currentRoute in topLevelRoutes
     var navBarVisible by remember { mutableStateOf(true) }
-val nestedScrollConnection = remember {
-    object : NestedScrollConnection {
-        override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset {
-            if (available.y < -8) navBarVisible = false
-            if (available.y > 8)  navBarVisible = true
-            return Offset.Zero
+    val nestedScrollConnection =
+        remember {
+            object : NestedScrollConnection {
+                override fun onPreScroll(
+                    available: Offset,
+                    source: NestedScrollSource,
+                ): Offset {
+                    if (available.y < -8) navBarVisible = false
+                    if (available.y > 8) navBarVisible = true
+                    return Offset.Zero
+                }
+            }
         }
-    }
-}
 
-LaunchedEffect(currentRoute) { navBarVisible = true }
+    LaunchedEffect(currentRoute) { navBarVisible = true }
 
     LaunchedEffect(Unit) {
         if (MiuiPermissionUtils.isSupportedOnThisDevice(context) &&
