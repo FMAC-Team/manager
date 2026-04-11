@@ -47,9 +47,9 @@ jobs:
       run: |
        mkdir -p app/libs
        cp flutter_nekosu/build/host/outputs/repo/me/nekosu/flutter_nekosu/flutter_release/*/flutter_release-*.aar app/libs/
-    # flutter engine embedding
+       # flutter engine embedding
        find ~/.pub-cache -name "flutter_embedding_release-*.aar" | head -1 | xargs -I{} cp {} app/libs/
-    # 其他 flutter plugin AAR（如有）
+       # 其他 flutter plugin AAR（如有）
        find flutter_nekosu/build/host/outputs/repo -name "*.aar" | xargs -I{} cp {} app/libs/
        echo "=== libs contents ==="
        ls -la app/libs/
