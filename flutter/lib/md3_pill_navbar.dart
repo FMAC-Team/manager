@@ -8,8 +8,8 @@ class NavBarTab {
   final Widget? activeIcon;
 }
 
-class Md3PillNavBar extends StatefulWidget {
-  const Md3PillNavBar({
+class ModernCapsuleNavBar extends StatelessWidget {
+  const ModernCapsuleNavBar({
     super.key,
     required this.tabs,
     required this.selectedIndex,
@@ -21,113 +21,65 @@ class Md3PillNavBar extends StatefulWidget {
   final ValueChanged<int> onTabSelected;
 
   @override
-  State<Md3PillNavBar> createState() => _Md3PillNavBarState();
-}
-
-class _Md3PillNavBarState extends State<Md3PillNavBar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _slideAnim;
-  int _prevIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _prevIndex = widget.selectedIndex;
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _slideAnim = CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic);
-  }
-
-  @override
-  void didUpdateWidget(Md3PillNavBar old) {
-    super.didUpdateWidget(old);
-    if (old.selectedIndex != widget.selectedIndex) {
-      _prevIndex = old.selectedIndex;
-      _ctrl.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final count = widget.tabs.length;
+    final count = tabs.length;
 
-    const double barH = 80;
-    const double indicatorH = 32;
-    const double indicatorW = 64;
-    const double pillRadius = 28.0;
+    final double alignmentX = count > 1 ? -1.0 + (selectedIndex * 2 / (count - 1)) : 0.0;
 
-    return Align(
-      alignment: Alignment.bottomCenter,
+    return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-        child: Material(
-          elevation: 2,
-          shadowColor: scheme.shadow,
-          surfaceTintColor: scheme.surfaceTint,
-          color: scheme.surfaceContainer,
-          borderRadius: BorderRadius.circular(pillRadius),
-          child: SizedBox(
-            height: barH,
-            child: LayoutBuilder(
-              builder: (ctx, constraints) {
-                final itemW = constraints.maxWidth / count;
-
-                return AnimatedBuilder(
-                  animation: _slideAnim,
-                  builder: (_, __) {
-                    final fromX =
-                        _prevIndex * itemW + (itemW - indicatorW) / 2;
-                    final toX =
-                        widget.selectedIndex * itemW + (itemW - indicatorW) / 2;
-                    final indicatorX =
-                        fromX + (toX - fromX) * _slideAnim.value;
-
-                    return Stack(
-                      children: [
-                        // sliding indicator
-                        Positioned(
-                          left: indicatorX,
-                          top: (barH - indicatorH) / 2,
-                          width: indicatorW,
-                          height: indicatorH,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              color: scheme.secondaryContainer,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                          ),
-                        ),
-                        // tabs
-                        Row(
-                          children: List.generate(
-                            count,
-                            (i) => _TabItem(
-                              tab: widget.tabs[i],
-                              selected: widget.selectedIndex == i,
-                              scheme: scheme,
-                              onTap: () {
-                                HapticFeedback.selectionClick();
-                                widget.onTabSelected(i);
-                              },
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-            ),
+        padding: const EdgeInsets.only(bottom: 16, left: 24, right: 24),
+        child: Container(
+          height: 68,
+          decoration: BoxDecoration(
+            color: scheme.surface,
+            borderRadius: BorderRadius.circular(34),
+            boxShadow:[
+              BoxShadow(
+                color: scheme.shadow.withOpacity(0.06),
+                blurRadius: 24,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Stack(
+            children:[
+              AnimatedAlign(
+                alignment: Alignment(alignmentX, 0),
+                duration: const Duration(milliseconds: 400),
+                curve: Curves.easeOutBack, 
+                child: FractionallySizedBox(
+                  widthFactor: 1 / count,
+                  child: Padding(
+                    padding: const EdgeInsets.all(6.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: scheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Row(
+                children: List.generate(
+                  count,
+                  (i) => Expanded(
+                    child: _TabItem(
+                      tab: tabs[i],
+                      selected: selectedIndex == i,
+                      scheme: scheme,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onTabSelected(i);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -135,7 +87,7 @@ class _Md3PillNavBarState extends State<Md3PillNavBar>
   }
 }
 
-class _TabItem extends StatefulWidget {
+class _TabItem extends StatelessWidget {
   const _TabItem({
     required this.tab,
     required this.selected,
@@ -149,89 +101,50 @@ class _TabItem extends StatefulWidget {
   final VoidCallback onTap;
 
   @override
-  State<_TabItem> createState() => _TabItemState();
-}
-
-class _TabItemState extends State<_TabItem>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _appear;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-      value: widget.selected ? 1.0 : 0.0,
-    );
-    _appear = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
-  }
-
-  @override
-  void didUpdateWidget(_TabItem old) {
-    super.didUpdateWidget(old);
-    if (widget.selected != old.selected) {
-      widget.selected ? _ctrl.forward() : _ctrl.reverse();
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final scheme = widget.scheme;
-    return Expanded(
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(28),
-        splashColor: scheme.secondaryContainer.withOpacity(0.4),
-        highlightColor: Colors.transparent,
-        child: AnimatedBuilder(
-          animation: _appear,
-          builder: (_, __) {
-            final iconColor = Color.lerp(
-              scheme.onSurfaceVariant,
-              scheme.onSecondaryContainer,
-              _appear.value,
-            )!;
-            final labelColor = Color.lerp(
-              scheme.onSurfaceVariant,
-              scheme.onSurface,
-              _appear.value,
-            )!;
-            final labelWeight = FontWeight.lerp(
-              FontWeight.w400,
-              FontWeight.w600,
-              _appear.value,
-            )!;
-            return Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconTheme(
-                  data: IconThemeData(color: iconColor, size: 24),
-                  child: (widget.selected && widget.tab.activeIcon != null)
-                      ? widget.tab.activeIcon!
-                      : widget.tab.icon,
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque, 
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutCubic,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children:[
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              transitionBuilder: (child, animation) {
+                return ScaleTransition(
+                  scale: animation,
+                  child: FadeTransition(opacity: animation, child: child),
+                );
+              },
+              child: IconTheme(
+                key: ValueKey<bool>(selected), 
+                data: IconThemeData(
+                  color: selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+                  size: selected ? 26 : 24, 
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.tab.label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: labelWeight,
-                    color: labelColor,
-                    height: 1.0,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            );
-          },
+                child: (selected && tab.activeIcon != null) 
+                    ? tab.activeIcon! 
+                    : tab.icon,
+              ),
+            ),
+            const SizedBox(height: 4),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 250),
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                color: selected ? scheme.onSecondaryContainer : scheme.onSurfaceVariant,
+              ),
+              child: Text(
+                tab.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
         ),
       ),
     );
