@@ -12,7 +12,7 @@ import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
 const val ENGINE_ID = "nav_engine"
-const val CHANNEL   = "nekosu.aqnya/navbar"
+const val CHANNEL = "nekosu.aqnya/navbar"
 
 @Composable
 fun FlutterNavBar(
@@ -20,14 +20,16 @@ fun FlutterNavBar(
     selectedIndex: Int = 0,
     onTabSelected: (Int) -> Unit = {},
 ) {
-    val engine = remember {
-        FlutterEngineCache.getInstance().get(ENGINE_ID)
-            ?: error("FlutterEngine not ready, check NkApplication.onCreate()")
-    }
+    val engine =
+        remember {
+            FlutterEngineCache.getInstance().get(ENGINE_ID)
+                ?: error("FlutterEngine not ready, check NkApplication.onCreate()")
+        }
 
-    val channel = remember {
-        MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
-    }
+    val channel =
+        remember {
+            MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+        }
 
     LaunchedEffect(selectedIndex) {
         channel.invokeMethod("setIndex", selectedIndex)
@@ -45,10 +47,11 @@ fun FlutterNavBar(
     AndroidView(
         modifier = modifier.height(112.dp),
         factory = { ctx ->
-            val textureView = FlutterTextureView(ctx).apply {
-                isOpaque = false 
-            }
-            
+            val textureView =
+                FlutterTextureView(ctx).apply {
+                    isOpaque = false
+                }
+
             FlutterView(ctx, textureView).also { view ->
                 view.setBackgroundColor(Color.TRANSPARENT)
                 view.attachToFlutterEngine(engine)
@@ -56,6 +59,6 @@ fun FlutterNavBar(
         },
         onRelease = { view ->
             view.detachFromFlutterEngine()
-        }
+        },
     )
 }
