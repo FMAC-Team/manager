@@ -8,11 +8,10 @@ import io.flutter.embedding.engine.dart.DartExecutor
 import me.nekosu.aqnya.util.CrashHandler
 
 class NkApplication : Application() {
-
     val flutterEngine by lazy {
         FlutterEngine(this).apply {
             dartExecutor.executeDartEntrypoint(
-                DartExecutor.DartEntrypoint.createDefault()
+                DartExecutor.DartEntrypoint.createDefault(),
             )
             FlutterEngineCache.getInstance().put("nav_engine", this)
         }
