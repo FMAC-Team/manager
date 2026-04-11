@@ -42,13 +42,6 @@ jobs:
       run: |
         flutter pub get
         flutter build aar --no-debug --no-profile
-       
-    - name: Copy Flutter AARs to app/libs
-      run: |
-        mkdir -p app/libs
-        find flutter_nekosu/build/host/outputs/repo -name "*.aar" | xargs -I{} cp {} app/libs/
-        echo "=== libs contents ==="
-        ls -la app/libs/
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
