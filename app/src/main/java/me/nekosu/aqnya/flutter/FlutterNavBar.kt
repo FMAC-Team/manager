@@ -1,6 +1,9 @@
 package me.nekosu.aqnya.ui.navbar
 
 import android.graphics.Color
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
@@ -12,9 +15,6 @@ import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 
 const val ENGINE_ID = "nav_engine"
 const val CHANNEL = "nekosu.aqnya/navbar"
@@ -77,15 +77,15 @@ fun FlutterNavBar(
         }
         onDispose { channel.setMethodCallHandler(null) }
     }
-    
-val barHeight by animateDpAsState(
-    targetValue = if (navBarVisible) 112.dp else 0.dp,
-    animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
-    label = "navBarHeight",
-)
+
+    val barHeight by animateDpAsState(
+        targetValue = if (navBarVisible) 112.dp else 0.dp,
+        animationSpec = tween(durationMillis = 300, easing = FastOutSlowInEasing),
+        label = "navBarHeight",
+    )
 
     AndroidView(
-modifier = modifier.height(barHeight),
+        modifier = modifier.height(barHeight),
         factory = { ctx ->
             val textureView =
                 FlutterTextureView(ctx).apply {
