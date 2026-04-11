@@ -8,6 +8,7 @@ import io.flutter.embedding.android.FlutterSurfaceView
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
+import androidx.compose.foundation.layout.height
 
 const val ENGINE_ID = "nav_engine"
 const val CHANNEL   = "nekosu.aqnya/navbar"

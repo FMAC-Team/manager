@@ -76,6 +76,7 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
+import me.nekosu.aqnya.ui.navbar.FlutterNavBar
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -230,6 +231,8 @@ fun BottomNavigationBar(
     when (style) {
         NavBarStyle.FLOATING -> FloatingBottomNavigationBar(navController, items)
         NavBarStyle.NORMAL -> NormalBottomNavigationBar(navController, items)
+        NavBarStyle.FLUTTER -> {}
+    }
     }
 }
 
@@ -431,7 +434,29 @@ fun MainScreen() {
                 ) {
                     FloatingBottomNavigationBar(navController, navItems)
                 }
-            }
+            }else if (navBarStyle == NavBarStyle.FLUTTER) {
+    AnimatedVisibility(
+        visible = showBottomBar,
+        enter = fadeIn(tween(200)) + slideInVertically { it },
+        exit = fadeOut(tween(150)) + slideOutVertically { it },
+        modifier = Modifier.align(Alignment.BottomCenter),
+    ) {
+        val currentIndex = navItems.indexOfFirst { it.route == currentRoute }.coerceAtLeast(0)
+        FlutterNavBar(
+            modifier = Modifier.fillMaxWidth(),
+            selectedIndex = currentIndex,
+            onTabSelected = { i ->
+                navController.navigate(navItems[i].route) {
+                    launchSingleTop = true
+                    restoreState = true
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                }
+            },
+        )
+    }
+}
         }
     }
 }
