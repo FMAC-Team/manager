@@ -13,6 +13,6 @@ enum class NavBarStyle(
     ;
 
     companion object {
-        fun fromValue(value: Int) = entries.find { it.value == value } ?: FLOATING
+        fun fromValue(value: Int) = entries.find { it.value == value } ?: FLUTTER
     }
 }
