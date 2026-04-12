@@ -17,7 +17,7 @@ object DebugPreferences {
     val KEY_THEME_MODE = intPreferencesKey("theme_mode")
     private val NAV_BAR_STYLE_KEY = intPreferencesKey("nav_bar_style")
 
-    fun navBarStyleFlow(context: Context): Flow<Int> = context.debugDataStore.data.map { it[NAV_BAR_STYLE_KEY] ?: 0 }
+    fun navBarStyleFlow(context: Context): Flow<Int> = context.debugDataStore.data.map { it[NAV_BAR_STYLE_KEY] ?: 2 }
 
     suspend fun setNavBarStyle(
         context: Context,
