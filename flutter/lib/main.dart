@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'navbar.dart'; 
+import 'navbar.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,11 +43,11 @@ class _NavBarAppState extends State<NavBarApp> {
       brightness: WidgetsBinding.instance.platformDispatcher.platformBrightness,
     );
     return base.copyWith(
-      surfaceContainer:     c('surfaceContainer'),
-      secondaryContainer:   c('secondaryContainer'),
+      surfaceContainer: c('surfaceContainer'),
+      secondaryContainer: c('secondaryContainer'),
       onSecondaryContainer: c('onSecondaryContainer'),
-      onSurfaceVariant:     c('onSurfaceVariant'),
-      surfaceTint:          c('surfaceTint'),
+      onSurfaceVariant: c('onSurfaceVariant'),
+      surfaceTint: c('surfaceTint'),
     );
   }
 
@@ -58,7 +58,7 @@ class _NavBarAppState extends State<NavBarApp> {
 
   @override
   Widget build(BuildContext context) {
-if (_dynamicScheme == null) {
+    if (_dynamicScheme == null) {
       return const ColoredBox(color: Colors.transparent);
     }
     return MaterialApp(
@@ -66,7 +66,7 @@ if (_dynamicScheme == null) {
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: Colors.transparent,
-        colorScheme: _dynamicScheme!
+        colorScheme: _dynamicScheme!,
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
@@ -76,35 +76,46 @@ if (_dynamicScheme == null) {
       themeMode: ThemeMode.system,
       home: Scaffold(
         backgroundColor: Colors.transparent,
-    body: AnimatedSlide(
-  offset: _navBarVisible ? Offset.zero : const Offset(0, 1.5),
-  duration: const Duration(milliseconds: 300),
-  curve: Curves.easeOutCubic,
-  child: AnimatedOpacity(
-    opacity: _navBarVisible ? 1.0 : 0.0,
-    duration: const Duration(milliseconds: 200),
-    child: TweenAnimationBuilder<double>(
-      tween: Tween<double>(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 600),
-      curve: Curves.easeOutCubic,
-      builder: (context, value, child) => Transform.translate(
-        offset: Offset(0, 80 * (1 - value)),
-        child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+        body: AnimatedSlide(
+          offset: _navBarVisible ? Offset.zero : const Offset(0, 1.5),
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+          child: AnimatedOpacity(
+            opacity: _navBarVisible ? 1.0 : 0.0,
+            duration: const Duration(milliseconds: 200),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween<double>(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 600),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) => Transform.translate(
+                offset: Offset(0, 80 * (1 - value)),
+                child: Opacity(opacity: value.clamp(0.0, 1.0), child: child),
+              ),
+              child: ModernCapsuleNavBar(
+                selectedIndex: _selectedIndex,
+                onTabSelected: _onTabSelected,
+                tabs: const [
+                  NavBarTab(
+                    label: '主页',
+                    icon: Icon(Icons.home_outlined),
+                    activeIcon: Icon(Icons.home_rounded),
+                  ),
+                  NavBarTab(
+                    label: '应用',
+                    icon: Icon(Icons.apps_outlined),
+                    activeIcon: Icon(Icons.apps_rounded),
+                  ),
+                  NavBarTab(
+                    label: '设置',
+                    icon: Icon(Icons.settings_outlined),
+                    activeIcon: Icon(Icons.settings_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
-      child: ModernCapsuleNavBar(
-        selectedIndex: _selectedIndex,
-        onTabSelected: _onTabSelected,
-        tabs: const [
-          NavBarTab(label: '主页', icon: Icon(Icons.home_outlined),     activeIcon: Icon(Icons.home_rounded)),
-          NavBarTab(label: '应用', icon: Icon(Icons.apps_outlined),     activeIcon: Icon(Icons.apps_rounded)),
-          NavBarTab(label: '设置', icon: Icon(Icons.settings_outlined), activeIcon: Icon(Icons.settings_rounded)),
-        ],
-      ),
-    ),
-  ),
-),
-      ),
-
     );
   }
 }
