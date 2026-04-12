@@ -85,7 +85,7 @@ fun SettingsScreen(navController: NavController) {
     val currentThemeMode = ThemeMode.fromValue(themeValue)
     var themeMenuExpanded by remember { mutableStateOf(false) }
 
-    val navBarStyleValue by DebugPreferences.navBarStyleFlow(mContext).collectAsState(initial = 0)
+    val navBarStyleValue by DebugPreferences.navBarStyleFlow(mContext).collectAsState(initial = 2)
     val currentNavBarStyle = NavBarStyle.fromValue(navBarStyleValue)
     var navBarStyleMenuExpanded by remember { mutableStateOf(false) }
 
