@@ -25,14 +25,16 @@ fun FlutterNavBar(
     navBarVisible: Boolean = true,
     onTabSelected: (Int) -> Unit = {},
 ) {
-    val engine = remember {
-        FlutterEngineCache.getInstance().get(ENGINE_ID)
-            ?: error("FlutterEngine not ready, check NkApplication.onCreate()")
-    }
+    val engine =
+        remember {
+            FlutterEngineCache.getInstance().get(ENGINE_ID)
+                ?: error("FlutterEngine not ready, check NkApplication.onCreate()")
+        }
 
-    val channel = remember {
-        MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
-    }
+    val channel =
+        remember {
+            MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
+        }
 
     val scheme = MaterialTheme.colorScheme
     LaunchedEffect(selectedIndex, scheme.surfaceContainer, navBarVisible) {
