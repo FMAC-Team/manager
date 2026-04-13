@@ -9,7 +9,6 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
