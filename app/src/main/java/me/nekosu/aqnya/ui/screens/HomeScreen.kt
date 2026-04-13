@@ -2,12 +2,6 @@ package me.nekosu.aqnya.ui.screens
 
 import android.os.Build
 import android.widget.Toast
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,7 +50,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -69,131 +62,6 @@ import me.nekosu.aqnya.util.getAppVersion
 enum class InstallStatus {
     INSTALLED,
     NOT_INSTALLED,
-}
-
-@Composable
-private fun ShimmerBox(
-    modifier: Modifier = Modifier,
-    shape: Shape = RoundedCornerShape(8.dp),
-) {
-    val transition = rememberInfiniteTransition(label = "shimmer")
-    val shimmerX by transition.animateFloat(
-        initialValue = -1f,
-        targetValue = 2f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "shimmerX",
-    )
-    val baseColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
-    val highlightColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.18f)
-
-    Box(
-        modifier =
-            modifier
-                .clip(shape)
-                .drawBehind {
-                    val w = size.width
-                    val offset = shimmerX * w
-                    drawRect(
-                        brush =
-                            Brush.linearGradient(
-                                colors = listOf(baseColor, highlightColor, baseColor),
-                                start = Offset(offset - w, 0f),
-                                end = Offset(offset + w, 0f),
-                            ),
-                    )
-                },
-    )
-}
-
-@Composable
-private fun HomeScreenSkeleton(showRules: Boolean) {
-    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(88.dp)
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
-                    .padding(20.dp),
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier.fillMaxSize(),
-            ) {
-                ShimmerBox(modifier = Modifier.size(50.dp), shape = CircleShape)
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ShimmerBox(modifier = Modifier.width(80.dp).height(14.dp))
-                    ShimmerBox(modifier = Modifier.width(120.dp).height(11.dp))
-                }
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            repeat(if (showRules) 2 else 1) {
-                Box(
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .height(90.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f))
-                            .padding(20.dp),
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        ShimmerBox(
-                            modifier = Modifier.width(40.dp).height(28.dp),
-                            shape = RoundedCornerShape(6.dp),
-                        )
-                        ShimmerBox(modifier = Modifier.width(64.dp).height(11.dp))
-                    }
-                }
-            }
-        }
-
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(28.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.6f))
-                    .padding(vertical = 8.dp),
-        ) {
-            Column {
-                repeat(4) { index ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 14.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        ShimmerBox(modifier = Modifier.size(38.dp), shape = RoundedCornerShape(11.dp))
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            ShimmerBox(modifier = Modifier.width(56.dp).height(10.dp))
-                            ShimmerBox(modifier = Modifier.width(100.dp).height(13.dp))
-                        }
-                    }
-                    if (index < 3) {
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 20.dp),
-                            thickness = 0.5.dp,
-                            color = MaterialTheme.colorScheme.outlineVariant,
-                        )
-                    }
-                }
-            }
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -239,42 +107,38 @@ fun HomeScreen(
                     .padding(bottom = 88.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            if (installStatus == null) {
-                HomeScreenSkeleton(showRules = showRules)
-            } else {
-                StatusCard(
-                    status = installStatus!!,
-                    onClick = {
-                        if (installStatus != InstallStatus.INSTALLED) {
-                            showInstallSheet = true
-                        } else {
-                            Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                )
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    StatCard(
-                        label = "超级用户",
-                        value = suCount.toString(),
-                        modifier = Modifier.weight(1f),
-                        onClick = onNavigateToApps,
-                    )
-                    if (showRules) {
-                        StatCard(
-                            label = "FMAC 规则",
-                            value = ruleCount.toString(),
-                            modifier = Modifier.weight(1f),
-                            onClick = onNavigateToRules,
-                        )
+            StatusCard(
+                status = installStatus ?: InstallStatus.NOT_INSTALLED,
+                onClick = {
+                    if (installStatus != InstallStatus.INSTALLED) {
+                        showInstallSheet = true
+                    } else {
+                        Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
                     }
-                }
+                },
+            )
 
-                DeviceInfoCard(modifier = Modifier.fillMaxWidth())
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                StatCard(
+                    label = "超级用户",
+                    value = suCount.toString(),
+                    modifier = Modifier.weight(1f),
+                    onClick = onNavigateToApps,
+                )
+                if (showRules) {
+                    StatCard(
+                        label = "FMAC 规则",
+                        value = ruleCount.toString(),
+                        modifier = Modifier.weight(1f),
+                        onClick = onNavigateToRules,
+                    )
+                }
             }
+
+            DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
 
