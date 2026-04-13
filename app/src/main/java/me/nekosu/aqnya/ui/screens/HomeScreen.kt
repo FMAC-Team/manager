@@ -108,7 +108,7 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StatusCard(
-                status = installStatus ?: InstallStatus.NOT_INSTALLED,
+                status = installStatus,
                 onClick = {
                     if (installStatus != InstallStatus.INSTALLED) {
                         showInstallSheet = true
