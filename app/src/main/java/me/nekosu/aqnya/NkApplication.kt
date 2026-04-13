@@ -13,7 +13,7 @@ class NkApplication : Application() {
             dartExecutor.executeDartEntrypoint(
                 DartExecutor.DartEntrypoint.createDefault(),
             )
-            FlutterEngineCache.getInstance().put("nav_engine", this)
+              FlutterEngineCache.getInstance().put("main_flutter_engine", this)
         }
     }
 

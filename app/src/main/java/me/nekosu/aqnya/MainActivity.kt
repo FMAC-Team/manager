@@ -9,7 +9,7 @@ import me.nekosu.aqnya.ui.screens.MainScreen
 import me.nekosu.aqnya.ui.theme.NekosuTheme
 
 class MainActivity : ComponentActivity() {
-    private val engine get() = FlutterEngineCache.getInstance().get("nav_engine")
+    private val engine get() = FlutterEngineCache.getInstance().get("main_flutter_engine")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

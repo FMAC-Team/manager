@@ -15,7 +15,7 @@ import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngineCache
 import io.flutter.plugin.common.MethodChannel
 
-const val ENGINE_ID = "nav_engine"
+const val ENGINE_ID = "main_flutter_engine"
 const val CHANNEL = "nekosu.aqnya/navbar"
 
 @Composable
