@@ -113,7 +113,7 @@ fun HomeScreen(
                 onClick = {
                     if (installStatus != InstallStatus.INSTALLED) {
                         showInstallSheet = true
-                        ncore().ctl(1)
+                        ncore.ctl(1)
                     } else {
                         Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
                     }
