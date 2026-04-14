@@ -9,7 +9,7 @@ object ncore_loader {
 
     fun init() {
         if (isLibraryLoaded) return
-        
+
         try {
             System.loadLibrary("ncore")
             isLibraryLoaded = true
@@ -20,9 +20,7 @@ object ncore_loader {
     }
 }
 
-
 class ncore {
-
     external fun helloLog()
 
     external fun ctl(value: Int): Int
