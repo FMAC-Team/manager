@@ -40,3 +40,14 @@
     public static me.nekosu.aqnya.KeyUtils INSTANCE;
     public byte[] loadKeyBytes(android.content.Context);
 }
+
+# Flutter
+-keep class io.flutter.plugins.GeneratedPluginRegistrant {
+    public static void registerWith(io.flutter.embedding.engine.FlutterEngine);
+}
+
+-keep class io.flutter.plugins.** { *; }
+
+-keep class io.flutter.plugin.** { *; }
+
+-keep class io.flutter.embedding.engine.** { *; }
