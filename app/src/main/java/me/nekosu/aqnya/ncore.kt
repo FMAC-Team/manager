@@ -20,7 +20,7 @@ object ncore_loader {
     }
 }
 
-class ncore {
+object ncore {
     external fun helloLog()
 
     external fun ctl(value: Int): Int
