@@ -248,7 +248,7 @@ class AppViewModel(
 
                 appConfigs = configs
 
-                val nc = ncore()
+                val nc = ncore
                 val pm = context.packageManager
                 for ((pkg, cfg) in configs) {
                     try {
@@ -340,7 +340,7 @@ class AppViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, config.allowed)
 
-            val nc = ncore()
+            val nc = ncore
             if (config.allowed) {
                 val capsJson =
                     json.encodeToString(
