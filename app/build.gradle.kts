@@ -95,6 +95,7 @@ dependencies {
     implementation(libs.okhttp)
     implementation(libs.moshi)
     implementation(libs.moshi.kotlin)
+    implementation("com.google.android.play:core:1.10.3")
     implementation(libs.kotlinx.serialization.json)
     implementation("me.nekosu.flutter_nekosu:flutter_release:1.0")
     testImplementation(libs.junit)
