@@ -56,9 +56,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.getAppVersion
-import me.nekosu.aqnya.ncore
 
 enum class InstallStatus {
     INSTALLED,
@@ -113,7 +113,7 @@ fun HomeScreen(
                 onClick = {
                     if (installStatus != InstallStatus.INSTALLED) {
                         showInstallSheet = true
-                        ncore().ctl(1);
+                        ncore().ctl(1)
                     } else {
                         Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
                     }
