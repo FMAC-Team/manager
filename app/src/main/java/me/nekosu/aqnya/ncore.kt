@@ -1,13 +1,27 @@
 package me.nekosu.aqnya
 
 import android.content.Context
+import android.util.Log
 
-class ncore {
-    companion object {
-        init {
+object ncore_loader {
+    private const val TAG = "ncore_loader"
+    private var isLibraryLoaded = false
+
+    fun init() {
+        if (isLibraryLoaded) return
+        
+        try {
             System.loadLibrary("ncore")
+            isLibraryLoaded = true
+            Log.d(TAG, "ncore library loaded successfully.")
+        } catch (e: UnsatisfiedLinkError) {
+            Log.e(TAG, "Failed to load ncore library: ${e.message}")
         }
     }
+}
+
+
+class ncore {
 
     external fun helloLog()
 

@@ -25,6 +25,7 @@ class NkApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         CrashHandler.init(this)
+        ncore_loader.init()
         flutterEngine
     }
 }
