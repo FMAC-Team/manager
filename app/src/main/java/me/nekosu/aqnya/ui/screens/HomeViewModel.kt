@@ -19,7 +19,7 @@ class HomeViewModel(
 ) : AndroidViewModel(app) {
     private val _installStatus =
         MutableStateFlow(
-            if (ncore().ctl(1) == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED,
+            if (ncore.ctl(1) == 0) InstallStatus.INSTALLED else InstallStatus.NOT_INSTALLED,
         )
     val installStatus: StateFlow<InstallStatus> = _installStatus
 
@@ -32,7 +32,7 @@ class HomeViewModel(
     init {
         if (_installStatus.value == InstallStatus.INSTALLED) {
             viewModelScope.launch {
-                withContext(Dispatchers.IO) { ncore().ctl(3) }
+                withContext(Dispatchers.IO) { ncore.ctl(3) }
                 withContext(Dispatchers.IO) {
                     val ctx = app.applicationContext
                     _suCount.value = RootDbHelper(ctx).getAllowedCount()

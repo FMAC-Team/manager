@@ -102,7 +102,7 @@ class RulesViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val rule = FmacRule(path.trim(), statusBits)
-                ncore().addRule(rule.path, rule.statusBits)
+                ncore.addRule(rule.path, rule.statusBits)
                 db.insert(rule)
                 rules = db.getAll()
                 withContext(Dispatchers.Main) { onDone(true) }
@@ -119,7 +119,7 @@ class RulesViewModel(
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                ncore().delRule(rule.path)
+                ncore.delRule(rule.path)
                 db.delete(rule.path)
                 rules = db.getAll()
                 withContext(Dispatchers.Main) { onDone(true) }

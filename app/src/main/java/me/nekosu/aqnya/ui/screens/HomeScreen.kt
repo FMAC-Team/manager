@@ -146,7 +146,7 @@ fun HomeScreen(
 
     if (showInstallSheet) {
         me.nekosu.aqnya
-            .ncore()
+            .ncore
             .helloLog()
     }
 }
