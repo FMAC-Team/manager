@@ -549,48 +549,33 @@ fun HistoryScreen(
                     val pinnedList = apps.filter { it.packageName in viewModel.pinnedApps }
                     val otherList = apps.filter { it.packageName !in viewModel.pinnedApps }
 
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(2.dp),
-                        contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
-                    ) {
-                        if (pinnedList.isNotEmpty()) {
-                            item { SectionLabel("已授权  ·  ${pinnedList.size}") }
-                            itemsIndexed(
-                                pinnedList,
-                                key = { _, it -> "pinned_${it.packageName}" },
-                            ) { index, app ->
-                                AppInfoItem(
-                                    app = app,
-                                    config = viewModel.appConfigs[app.packageName],
-                                    onClick = {
-                                        navController.navigate("app_detail/${app.packageName}")
-                                    },
-                                    shape = getAdapterShape(index, pinnedList.size),
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                            item { Spacer(Modifier.height(12.dp)) }
-                        }
+                   LazyColumn(
+    state = listState,
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.spacedBy(2.dp),
+    contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
+) {
+    val fullList = pinnedList + otherList
+    val totalSize = fullList.size
 
-                        if (otherList.isNotEmpty()) {
-                            itemsIndexed(
-                                otherList,
-                                key = { _, it -> it.packageName },
-                            ) { index, app ->
-                                AppInfoItem(
-                                    app = app,
-                                    config = viewModel.appConfigs[app.packageName],
-                                    onClick = {
-                                        navController.navigate("app_detail/${app.packageName}")
-                                    },
-                                    shape = getAdapterShape(index, otherList.size),
-                                    modifier = Modifier.animateItem(),
-                                )
-                            }
-                        }
-                    }
+    itemsIndexed(
+        fullList,
+        key = { _, it -> 
+            val prefix = if (it.packageName in viewModel.pinnedApps) "pinned_" else "other_"
+            prefix + it.packageName 
+        },
+    ) { index, app ->
+        AppInfoItem(
+            app = app,
+            config = viewModel.appConfigs[app.packageName],
+            onClick = {
+                navController.navigate("app_detail/${app.packageName}")
+            },
+            shape = getAdapterShape(index, totalSize),
+            modifier = Modifier.animateItem(),
+        )
+    }
+}
                 }
             }
         }
@@ -665,37 +650,27 @@ fun AppInfoItem(
         },
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors =
-            CardDefaults.cardColors(
-                containerColor =
-                    if (isAllowed) {
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    },
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 0.dp,
-                pressedElevation = 2.dp,
-            ),
+        colors = CardDefaults.cardColors(
+            containerColor =                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIcon(
                 packageName = app.packageName,
-                modifier = Modifier.size(44.dp),
+                modifier = Modifier.size(42.dp),
             )
-            Spacer(Modifier.width(16.dp))
+            
+            Spacer(Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.Center
             ) {
                 Text(
                     text = app.name,
@@ -706,33 +681,29 @@ fun AppInfoItem(
                 )
 
                 Text(
-                    text = "${app.packageName}  ·  UID: ${app.uid}",
+                    text = "${app.packageName}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+            }
 
-                // Tags row
-                val tags =
-                    buildList {
-                        if (isAllowed) add(Pair("已授权", MaterialTheme.colorScheme.primary))
-                        if (app.isSystem) add(Pair("系统", MaterialTheme.colorScheme.secondary))
-                    }
-                if (tags.isNotEmpty()) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        tags.forEach { (label, color) ->
-                            AppTag(label = label, color = color)
-                        }
-                    }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (isAllowed) {
+                    AppTag(label = "已授权", color = MaterialTheme.colorScheme.primary)
+                }
+                if (app.isSystem) {
+                    AppTag(label = "系统", color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }
     }
 }
+
 
 @Composable
 fun AppTag(
