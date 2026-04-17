@@ -59,6 +59,13 @@ jobs:
       run: |
         flutter pub get
         flutter build aar --no-debug --no-profile
+        
+    - name: Upload Flutter AAR Artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: flutter-aar-repo
+        path: flutter/build/host/outputs/repo/
+        if-no-files-found: error
 
     - name: Cache Zig
       id: cache-zig
