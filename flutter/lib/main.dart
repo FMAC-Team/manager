@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'navbar.dart';
+import 'settings.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,16 +17,25 @@ class NavBarApp extends StatefulWidget {
 class _NavBarAppState extends State<NavBarApp> {
   int _selectedIndex = 0;
   bool _navBarVisible = true;
+  bool _showRules = false;
   ColorScheme? _dynamicScheme;
   static const _channel = MethodChannel('nekosu.aqnya/navbar');
 
   @override
   void initState() {
     super.initState();
+    _initData();
+    
     _channel.setMethodCallHandler((call) async {
       switch (call.method) {
         case 'setIndex':
-          if (mounted) setState(() => _selectedIndex = call.arguments as int);
+          if (mounted) {
+            setState(() {
+              int newIndex = call.arguments as int;
+              int maxIndex = _showRules ? 3 : 2;
+              _selectedIndex = newIndex > maxIndex ? maxIndex : newIndex;
+            });
+          }
         case 'setColors':
           final m = Map<String, int>.from(call.arguments as Map);
           if (mounted) setState(() => _dynamicScheme = _buildScheme(m));
@@ -34,6 +44,21 @@ class _NavBarAppState extends State<NavBarApp> {
       }
     });
     _channel.invokeMethod('requestColors');
+  }
+  
+  Future<void> _initData() async {
+    final showRules = await DebugConfig.getShowRules();
+    
+    if (mounted) {
+      setState(() {
+        _showRules = showRules;
+        int maxIndex = _showRules ? 3 : 2;
+        if (_selectedIndex > maxIndex) {
+          _selectedIndex = maxIndex;
+          _channel.invokeMethod('onTabSelected', _selectedIndex);
+        }
+      });
+    }
   }
 
   ColorScheme _buildScheme(Map<String, int> m) {
@@ -54,6 +79,41 @@ class _NavBarAppState extends State<NavBarApp> {
   void _onTabSelected(int i) {
     setState(() => _selectedIndex = i);
     _channel.invokeMethod('onTabSelected', i);
+  }
+
+  List<NavBarTab> _buildTabs() {
+    final tabs = [
+      const NavBarTab(
+        label: '主页',
+        icon: Icon(Icons.home_outlined),
+        activeIcon: Icon(Icons.home_rounded),
+      ),
+      const NavBarTab(
+        label: '应用',
+        icon: Icon(Icons.apps_outlined),
+        activeIcon: Icon(Icons.apps_rounded),
+      ),
+    ];
+
+    if (_showRules) {
+      tabs.add(
+        const NavBarTab(
+          label: '规则',
+          icon: Icon(Icons.gavel_outlined),
+          activeIcon: Icon(Icons.gavel_rounded),
+        ),
+      );
+    }
+
+    tabs.add(
+      const NavBarTab(
+        label: '设置',
+        icon: Icon(Icons.settings_outlined),
+        activeIcon: Icon(Icons.settings_rounded),
+      ),
+    );
+
+    return tabs;
   }
 
   @override
@@ -94,23 +154,7 @@ class _NavBarAppState extends State<NavBarApp> {
               child: ModernCapsuleNavBar(
                 selectedIndex: _selectedIndex,
                 onTabSelected: _onTabSelected,
-                tabs: const [
-                  NavBarTab(
-                    label: '主页',
-                    icon: Icon(Icons.home_outlined),
-                    activeIcon: Icon(Icons.home_rounded),
-                  ),
-                  NavBarTab(
-                    label: '应用',
-                    icon: Icon(Icons.apps_outlined),
-                    activeIcon: Icon(Icons.apps_rounded),
-                  ),
-                  NavBarTab(
-                    label: '设置',
-                    icon: Icon(Icons.settings_outlined),
-                    activeIcon: Icon(Icons.settings_rounded),
-                  ),
-                ],
+                tabs: _buildTabs(),
               ),
             ),
           ),
