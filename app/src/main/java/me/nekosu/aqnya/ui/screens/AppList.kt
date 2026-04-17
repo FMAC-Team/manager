@@ -185,6 +185,9 @@ class AppViewModel(
     var filteredApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
 
+    val pinnedApps: Set<String>
+        get() = appConfigs.keys
+
     init {
         viewModelScope.launch(Dispatchers.IO) {
             loadAppConfigs()
@@ -197,7 +200,6 @@ class AppViewModel(
     }
 
     private fun updateFilteredApps() {
-        val snapshot = appConfigs
         val q = searchQuery.trim().lowercase()
         filteredApps =
             allApps
@@ -214,10 +216,7 @@ class AppViewModel(
                             app.name.lowercase().contains(q) ||
                             app.packageName.lowercase().contains(q)
                     passFilter && passSearch
-                }.sortedWith(
-                    compareByDescending<AppInfo> { snapshot.containsKey(it.packageName) }
-                        .thenBy { it.name.lowercase() },
-                )
+                }.sortedBy { it.name.lowercase() }
     }
 
     private suspend fun loadAppConfigs() {
@@ -547,22 +546,20 @@ fun HistoryScreen(
                 }
 
                 else -> {
-                    val allowedList = apps.filter { viewModel.appConfigs.containsKey(it.packageName) }
-                    val otherList = apps.filter { !viewModel.appConfigs.containsKey(it.packageName) }
+                    val pinnedList = apps.filter { it.packageName in viewModel.pinnedApps }
+                    val otherList = apps.filter { it.packageName !in viewModel.pinnedApps }
 
                     LazyColumn(
                         state = listState,
-                        modifier =
-                            Modifier
-                                .fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
                     ) {
-                        if (allowedList.isNotEmpty()) {
-                            item { SectionLabel("已授权  ·  ${allowedList.size}") }
+                        if (pinnedList.isNotEmpty()) {
+                            item { SectionLabel("已授权  ·  ${pinnedList.size}") }
                             itemsIndexed(
-                                allowedList,
-                                key = { _, it -> "allowed_${it.packageName}" },
+                                pinnedList,
+                                key = { _, it -> "pinned_${it.packageName}" },
                             ) { index, app ->
                                 AppInfoItem(
                                     app = app,
@@ -570,7 +567,7 @@ fun HistoryScreen(
                                     onClick = {
                                         navController.navigate("app_detail/${app.packageName}")
                                     },
-                                    shape = getAdapterShape(index, allowedList.size),
+                                    shape = getAdapterShape(index, pinnedList.size),
                                     modifier = Modifier.animateItem(),
                                 )
                             }
@@ -584,7 +581,7 @@ fun HistoryScreen(
                             ) { index, app ->
                                 AppInfoItem(
                                     app = app,
-                                    config = null,
+                                    config = viewModel.appConfigs[app.packageName],
                                     onClick = {
                                         navController.navigate("app_detail/${app.packageName}")
                                     },
@@ -700,19 +697,13 @@ fun AppInfoItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        text = app.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                }
+                Text(
+                    text = app.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
 
                 Text(
                     text = "${app.packageName}  ·  UID: ${app.uid}",
@@ -722,26 +713,42 @@ fun AppInfoItem(
                     overflow = TextOverflow.Ellipsis,
                 )
 
-                if (isAllowed && config.caps.isNotEmpty()) {
-                    val capsText =
-                        config.caps.take(3).joinToString(" · ") { it.label } +
-                            if (config.caps.size > 3) " +${config.caps.size - 3}" else ""
-                    Text(
-                        text = capsText,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                } else if (isAllowed) {
-                    Text(
-                        text = "无 Capabilities",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    )
+                // Tags row
+                val tags = buildList {
+                    if (isAllowed) add(Pair("已授权", MaterialTheme.colorScheme.primary))
+                    if (app.isSystem) add(Pair("系统", MaterialTheme.colorScheme.secondary))
+                }
+                if (tags.isNotEmpty()) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        tags.forEach { (label, color) ->
+                            AppTag(label = label, color = color)
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun AppTag(
+    label: String,
+    color: Color,
+) {
+    Surface(
+        shape = RoundedCornerShape(4.dp),
+        color = color.copy(alpha = 0.12f),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+        )
     }
 }
 
