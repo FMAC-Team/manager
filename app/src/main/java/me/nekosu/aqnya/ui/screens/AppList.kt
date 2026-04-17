@@ -549,33 +549,33 @@ fun HistoryScreen(
                     val pinnedList = apps.filter { it.packageName in viewModel.pinnedApps }
                     val otherList = apps.filter { it.packageName !in viewModel.pinnedApps }
 
-                   LazyColumn(
-    state = listState,
-    modifier = Modifier.fillMaxSize(),
-    verticalArrangement = Arrangement.spacedBy(2.dp),
-    contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
-) {
-    val fullList = pinnedList + otherList
-    val totalSize = fullList.size
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
+                    ) {
+                        val fullList = pinnedList + otherList
+                        val totalSize = fullList.size
 
-    itemsIndexed(
-        fullList,
-        key = { _, it -> 
-            val prefix = if (it.packageName in viewModel.pinnedApps) "pinned_" else "other_"
-            prefix + it.packageName 
-        },
-    ) { index, app ->
-        AppInfoItem(
-            app = app,
-            config = viewModel.appConfigs[app.packageName],
-            onClick = {
-                navController.navigate("app_detail/${app.packageName}")
-            },
-            shape = getAdapterShape(index, totalSize),
-            modifier = Modifier.animateItem(),
-        )
-    }
-}
+                        itemsIndexed(
+                            fullList,
+                            key = { _, it ->
+                                val prefix = if (it.packageName in viewModel.pinnedApps) "pinned_" else "other_"
+                                prefix + it.packageName
+                            },
+                        ) { index, app ->
+                            AppInfoItem(
+                                app = app,
+                                config = viewModel.appConfigs[app.packageName],
+                                onClick = {
+                                    navController.navigate("app_detail/${app.packageName}")
+                                },
+                                shape = getAdapterShape(index, totalSize),
+                                modifier = Modifier.animateItem(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -650,27 +650,29 @@ fun AppInfoItem(
         },
         modifier = modifier.fillMaxWidth(),
         shape = shape,
-        colors = CardDefaults.cardColors(
-            containerColor =                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+            ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppIcon(
                 packageName = app.packageName,
                 modifier = Modifier.size(42.dp),
             )
-            
+
             Spacer(Modifier.width(14.dp))
 
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+                verticalArrangement = Arrangement.Center,
             ) {
                 Text(
                     text = app.name,
@@ -691,7 +693,7 @@ fun AppInfoItem(
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (isAllowed) {
                     AppTag(label = "allowed", color = MaterialTheme.colorScheme.primary)
@@ -703,7 +705,6 @@ fun AppInfoItem(
         }
     }
 }
-
 
 @Composable
 fun AppTag(
