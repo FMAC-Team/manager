@@ -262,7 +262,7 @@ fun AppDetailScreen(
                             )
                         }
                         if (app.isSystem) {
-            AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
+                            AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
