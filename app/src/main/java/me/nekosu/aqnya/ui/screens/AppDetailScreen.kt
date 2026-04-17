@@ -262,17 +262,7 @@ fun AppDetailScreen(
                             )
                         }
                         if (app.isSystem) {
-                            Surface(
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.secondaryContainer,
-                            ) {
-                                Text(
-                                    text = "系统",
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    fontSize = 10.sp,
-                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                )
-                            }
+            AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                         }
                     }
                 }
