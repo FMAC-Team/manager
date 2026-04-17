@@ -84,14 +84,14 @@ class _NavBarAppState extends State<NavBarApp> {
   List<NavBarTab> _buildTabs() {
     final tabs = [
       const NavBarTab(
-        label: '主页',
+        label: '首页',
         icon: Icon(Icons.home_outlined),
-        activeIcon: Icon(Icons.home_rounded),
+        activeIcon: Icon(Icons.home),
       ),
       const NavBarTab(
         label: '应用',
-        icon: Icon(Icons.apps_outlined),
-        activeIcon: Icon(Icons.apps_rounded),
+        icon: Icon(Icons.list_outlined),
+        activeIcon: Icon(Icons.list),
       ),
     ];
 
@@ -99,8 +99,8 @@ class _NavBarAppState extends State<NavBarApp> {
       tabs.add(
         const NavBarTab(
           label: '规则',
-          icon: Icon(Icons.gavel_outlined),
-          activeIcon: Icon(Icons.gavel_rounded),
+          icon: Icon(Icons.security_outlined),
+          activeIcon: Icon(Icons.security),
         ),
       );
     }
@@ -109,12 +109,13 @@ class _NavBarAppState extends State<NavBarApp> {
       const NavBarTab(
         label: '设置',
         icon: Icon(Icons.settings_outlined),
-        activeIcon: Icon(Icons.settings_rounded),
+        activeIcon: Icon(Icons.settings),
       ),
     );
 
     return tabs;
   }
+
 
   @override
   Widget build(BuildContext context) {

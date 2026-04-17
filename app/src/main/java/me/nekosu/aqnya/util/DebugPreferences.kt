@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.onStart
 
 object DebugPreferences {
-    private const val PREF_NAME = "debug"
+    private const val PREF_NAME = "FlutterSharedPreferences"
     private const val PREFIX = "flutter."
 
     private fun getPrefs(context: Context): SharedPreferences = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
