@@ -1,46 +1,52 @@
 package me.nekosu.aqnya.util
 
 import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
+import android.content.SharedPreferences
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-
-val Context.debugDataStore: DataStore<Preferences> by preferencesDataStore(name = "debug_prefs")
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.onStart
 
 object DebugPreferences {
-    val KEY_SHOW_RULES = booleanPreferencesKey("debug_show_rules")
-    val KEY_THEME_MODE = intPreferencesKey("theme_mode")
-    private val NAV_BAR_STYLE_KEY = intPreferencesKey("nav_bar_style")
+    private const val PREF_NAME = "debug"
+    private const val PREFIX = "flutter."
 
-    fun navBarStyleFlow(context: Context): Flow<Int> = context.debugDataStore.data.map { it[NAV_BAR_STYLE_KEY] ?: 2 }
-
-    suspend fun setNavBarStyle(
-        context: Context,
-        value: Int,
-    ) {
-        context.debugDataStore.edit { it[NAV_BAR_STYLE_KEY] = value }
+    private fun getPrefs(context: Context): SharedPreferences {
+        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
     }
 
-    fun showRulesFlow(context: Context): Flow<Boolean> = context.debugDataStore.data.map { it[KEY_SHOW_RULES] ?: false }
+    fun showRulesFlow(context: Context): Flow<Boolean> = 
+        context.prefsFlow { getBoolean("${PREFIX}debug_show_rules", false) }
 
-    fun themeModeFlow(context: Context): Flow<Int> = context.debugDataStore.data.map { it[KEY_THEME_MODE] ?: 0 }
+    fun themeModeFlow(context: Context): Flow<Int> = 
+        context.prefsFlow { getInt("${PREFIX}theme_mode", 0) }
 
-    suspend fun setShowRules(
-        context: Context,
-        value: Boolean,
-    ) {
-        context.debugDataStore.edit { it[KEY_SHOW_RULES] = value }
+    fun navBarStyleFlow(context: Context): Flow<Int> = 
+        context.prefsFlow { getInt("${PREFIX}nav_bar_style", 2) }
+
+    fun setShowRules(context: Context, value: Boolean) {
+        getPrefs(context).edit().putBoolean("${PREFIX}debug_show_rules", value).apply()
     }
 
-    suspend fun setThemeMode(
-        context: Context,
-        mode: Int,
-    ) {
-        context.debugDataStore.edit { it[KEY_THEME_MODE] = mode }
+    fun setThemeMode(context: Context, mode: Int) {
+        getPrefs(context).edit().putInt("${PREFIX}theme_mode", mode).apply()
+    }
+
+    fun setNavBarStyle(context: Context, value: Int) {
+        getPrefs(context).edit().putInt("${PREFIX}nav_bar_style", value).apply()
+    }
+
+    private fun <T> Context.prefsFlow(getValue: SharedPreferences.() -> T): Flow<T> = callbackFlow {
+        val prefs = getPrefs(this@prefsFlow)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { p, key ->
+            trySend(p.getValue())
+        }
+        
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        trySend(prefs.getValue())
+        
+        awaitClose {
+            prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        }
     }
 }
