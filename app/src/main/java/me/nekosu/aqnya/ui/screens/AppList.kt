@@ -714,10 +714,11 @@ fun AppInfoItem(
                 )
 
                 // Tags row
-                val tags = buildList {
-                    if (isAllowed) add(Pair("已授权", MaterialTheme.colorScheme.primary))
-                    if (app.isSystem) add(Pair("系统", MaterialTheme.colorScheme.secondary))
-                }
+                val tags =
+                    buildList {
+                        if (isAllowed) add(Pair("已授权", MaterialTheme.colorScheme.primary))
+                        if (app.isSystem) add(Pair("系统", MaterialTheme.colorScheme.secondary))
+                    }
                 if (tags.isNotEmpty()) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
