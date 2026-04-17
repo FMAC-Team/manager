@@ -694,10 +694,10 @@ fun AppInfoItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (isAllowed) {
-                    AppTag(label = "已授权", color = MaterialTheme.colorScheme.primary)
+                    AppTag(label = "allowed", color = MaterialTheme.colorScheme.primary)
                 }
                 if (app.isSystem) {
-                    AppTag(label = "系统", color = MaterialTheme.colorScheme.secondary)
+                    AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                 }
             }
         }
