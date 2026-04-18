@@ -23,7 +23,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Numbers
 import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Rule
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material3.Card
@@ -128,6 +130,7 @@ fun HomeScreen(
                     label = "超级用户",
                     value = suCount.toString(),
                     modifier = Modifier.weight(1f),
+                    bgIcon = Icons.Filled.Numbers,
                     onClick = onNavigateToApps,
                 )
                 if (showRules) {
@@ -135,6 +138,7 @@ fun HomeScreen(
                         label = "FMAC 规则",
                         value = ruleCount.toString(),
                         modifier = Modifier.weight(1f),
+                        bgIcon = Icons.Filled.Rule,
                         onClick = onNavigateToRules,
                     )
                 }
@@ -235,7 +239,7 @@ fun StatusCard(
                                 drawCircle(
                                     brush =
                                         Brush.radialGradient(
-                                            colors = listOf(contentColor.copy(alpha = 0.45f), Color.Transparent),
+                                            colors = listOf(contentColor.copy(alpha = 0.25f), Color.Transparent),
                                             center = center,
                                             radius = glowRadius,
                                         ),
@@ -304,6 +308,7 @@ fun StatCard(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    bgIcon: ImageVector? = null,
     onClick: () -> Unit = {},
 ) {
     Card(
@@ -316,24 +321,37 @@ fun StatCard(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.65f),
             ),
     ) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.55f),
-            )
+        Box(modifier = Modifier.fillMaxWidth()) {
+            if (bgIcon != null) {
+                Icon(
+                    imageVector = bgIcon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(58.dp)
+                        .padding(end=18.dp, bottom=12.dp),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
+                )
+            }
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.60f),
+                )
+            }
         }
     }
 }
@@ -456,5 +474,37 @@ fun DeviceInfoItem(
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // 1. 预览：已安装状态的卡片
+            StatusCard(
+                status = InstallStatus.INSTALLED,
+                onClick = {}
+            )
+            // 2. 预览：未安装状态的卡片
+            StatusCard(
+                status = InstallStatus.NOT_INSTALLED,
+                onClick = {}
+            )
+            // 3. 预览：并排的统计卡片
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                StatCard(
+                    label = "超级用户",
+                    value = "0",
+                    bgIcon = Icons.Filled.Numbers,
+                    modifier = Modifier.weight(1f)
+                )
+                StatCard(
+                    label = "FMAC 规则",
+                    value = "0",
+                    bgIcon = Icons.Filled.Rule,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            // 4. 预览：设备信息卡片
+            DeviceInfoCard()
+        }
     }
 }
