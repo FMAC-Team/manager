@@ -326,10 +326,11 @@ fun StatCard(
                 Icon(
                     imageVector = bgIcon,
                     contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(58.dp)
-                        .padding(end=18.dp, bottom=12.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(58.dp)
+                            .padding(end = 18.dp, bottom = 12.dp),
                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
                 )
             }
@@ -476,17 +477,17 @@ fun HomeScreenPreview() {
     MaterialTheme {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // 1. 预览：已安装状态的卡片
             StatusCard(
                 status = InstallStatus.INSTALLED,
-                onClick = {}
+                onClick = {},
             )
             // 2. 预览：未安装状态的卡片
             StatusCard(
                 status = InstallStatus.NOT_INSTALLED,
-                onClick = {}
+                onClick = {},
             )
             // 3. 预览：并排的统计卡片
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -494,13 +495,13 @@ fun HomeScreenPreview() {
                     label = "超级用户",
                     value = "0",
                     bgIcon = Icons.Filled.Numbers,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
                 StatCard(
                     label = "FMAC 规则",
                     value = "0",
                     bgIcon = Icons.Filled.Rule,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 )
             }
             // 4. 预览：设备信息卡片
