@@ -46,13 +46,13 @@ object ncore {
     external fun getCap(uid: Int): Long
 
     external fun delCap(uid: Int): Int
-    
+
     external fun addSelinuxRule(
-    src: String?,
-    tgt: String?,
-    cls: String?,
-    perm: String?,
-    effect: Int,
-    invert: Boolean,
-): Int
+        src: String?,
+        tgt: String?,
+        cls: String?,
+        perm: String?,
+        effect: Int,
+        invert: Boolean,
+    ): Int
 }
