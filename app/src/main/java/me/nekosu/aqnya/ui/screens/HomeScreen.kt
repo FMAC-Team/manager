@@ -167,7 +167,7 @@ fun HomeScreen(
             } else {
                 Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
             }
-        }
+        },
     )
 
     if (showInstallSheet) {
@@ -348,10 +348,11 @@ fun StatCard(
                 Icon(
                     imageVector = bgIcon,
                     contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .size(58.dp)
-                        .padding(end=18.dp, bottom=12.dp),
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .size(58.dp)
+                            .padding(end = 18.dp, bottom = 12.dp),
                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
                 )
             }
@@ -503,7 +504,7 @@ fun HomeScreenPreviewInstalled() {
             showRules = true,
             onNavigateToApps = {},
             onNavigateToRules = {},
-            onInstallClick = {}
+            onInstallClick = {},
         )
     }
 }
@@ -519,7 +520,7 @@ fun HomeScreenPreviewNotInstalled() {
             showRules = true,
             onNavigateToApps = {},
             onNavigateToRules = {},
-            onInstallClick = {}
+            onInstallClick = {},
         )
     }
 }
