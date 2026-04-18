@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">nekosu</string>
+    <string name="app_name">NekoSU</string>
     <string name="all_app">All Apps</string>
     <string name="can_launch_app">Launchable Apps</string>
     <string name="system_app">System Apps</string>
@@ -35,5 +35,8 @@
     <string name="navbar_style_floating">Floating</string>
     <string name="navbar_style_normal">Normal</string>
     <string name="navbar_style_flutter">Flutter</string>
-
+    <string name="kernel_version">Kernel Version</string>
+    <string name="android_version">Android Version</string>
+    <string name="device_model">Device Model</string>
+    <string name="manager_version">Manager Version</string>
 </resources>

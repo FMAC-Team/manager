@@ -55,9 +55,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.getAppVersion
@@ -83,7 +85,7 @@ fun HomeScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = "NekoSU",
+                        text = stringResource(R.string.app_name),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                     )
@@ -394,10 +396,10 @@ fun DeviceInfoCard(modifier: Modifier = Modifier) {
 
     val items =
         listOf(
-            Triple(Icons.Filled.Memory, "内核版本", System.getProperty("os.version") ?: "Unavailable"),
-            Triple(Icons.Filled.Android, "Android 版本", Build.VERSION.RELEASE),
-            Triple(Icons.Filled.PhoneAndroid, "设备", "${Build.MANUFACTURER} ${Build.MODEL}"),
-            Triple(Icons.Filled.Settings, "管理器版本", appVersion),
+            Triple(Icons.Filled.Memory, stringResource(id = R.string.kernel_version), System.getProperty("os.version") ?: "Unavailable"),
+            Triple(Icons.Filled.Android, stringResource(id = R.string.android_version), Build.VERSION.RELEASE),
+            Triple(Icons.Filled.PhoneAndroid, stringResource(id = R.string.device_model), "${Build.MANUFACTURER} ${Build.MODEL}"),
+            Triple(Icons.Filled.Settings, stringResource(id = R.string.manager_version), appVersion),
         )
 
     Box(modifier = modifier.clip(RoundedCornerShape(28.dp))) {

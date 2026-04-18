@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">nekosu</string>
+    <string name="app_name">NekoSU</string>
     <string name="all_app">全部应用</string>
     <string name="can_launch_app">可用应用</string>
     <string name="system_app">系统应用</string>
@@ -33,4 +33,8 @@
     <string name="navbar_style_floating">悬浮</string>
     <string name="navbar_style_normal">普通</string>
     <string name="navbar_style_flutter">Flutter 样式</string>
+    <string name="kernel_version">内核版本</string>
+    <string name="android_version">Android 版本</string>
+    <string name="device_model">设备</string>
+    <string name="manager_version">管理器版本</string>
 </resources>
