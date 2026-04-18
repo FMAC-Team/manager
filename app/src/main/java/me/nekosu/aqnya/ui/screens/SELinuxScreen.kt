@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
@@ -30,8 +31,9 @@ import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import androidx.compose.ui.tooling.preview.Preview
+import me.nekosu.aqnya.ui.theme.NekosuTheme
 
 private val Context.selinuxDataStore: DataStore<Preferences> by preferencesDataStore("selinux_rules")
 private val KEY_GROUPS = stringPreferencesKey("groups")
@@ -80,6 +82,7 @@ private fun Context.groupsFlow() =
 @Composable
 fun SelinuxRulesPage(
     onAddRule: (SelinuxRule) -> Int,
+    onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -95,11 +98,27 @@ fun SelinuxRulesPage(
         }
     }
 
-    fun persist(g: List<SelinuxGroup>) {
-        groups = g
-        scope.launch { context.saveGroups(g) }
-    }
+    SelinuxRulesContent(
+        groups = groups,
+        onPersist = { g ->
+            groups = g
+            scope.launch { context.saveGroups(g) }
+        },
+        onAddRule = onAddRule,
+        onBackClick = onBackClick,
+        modifier = modifier,
+    )
+}
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SelinuxRulesContent(
+    groups: List<SelinuxGroup>,
+    onPersist: (List<SelinuxGroup>) -> Unit,
+    onAddRule: (SelinuxRule) -> Int,
+    onBackClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val snackState = remember { SnackbarHostState() }
     var snackMsg by remember { mutableStateOf<String?>(null) }
 
@@ -157,6 +176,14 @@ fun SelinuxRulesPage(
         },
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    IconButton(onClick = onBackClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "返回"
+                        )
+                    }
+                },
                 title = {
                     Column {
                         Text(
@@ -176,7 +203,7 @@ fun SelinuxRulesPage(
                 },
                 actions = {
                     if (groups.isNotEmpty()) {
-                        IconButton(onClick = { persist(emptyList()) }) {
+                        IconButton(onClick = { onPersist(emptyList()) }) {
                             Icon(Icons.Default.DeleteSweep, contentDescription = "Clear all")
                         }
                     }
@@ -199,7 +226,7 @@ fun SelinuxRulesPage(
                     GroupCard(
                         group = group,
                         onToggleExpand = {
-                            persist(
+                            onPersist(
                                 groups.map {
                                     if (it.id == group.id) it.copy(expanded = !it.expanded) else it
                                 },
@@ -209,7 +236,7 @@ fun SelinuxRulesPage(
                             editGroupTarget = group
                             showGroupDialog = true
                         },
-                        onDeleteGroup = { persist(groups.filter { it.id != group.id }) },
+                        onDeleteGroup = { onPersist(groups.filter { it.id != group.id }) },
                         onApplyGroup = {
                             var ok = 0
                             var fail = 0
@@ -230,7 +257,7 @@ fun SelinuxRulesPage(
                             showRuleDialog = true
                         },
                         onDeleteRule = { rule ->
-                            persist(
+                            onPersist(
                                 groups.map {
                                     if (it.id == group.id) {
                                         it.copy(rules = it.rules.filter { r -> r.id != rule.id })
@@ -256,7 +283,7 @@ fun SelinuxRulesPage(
             initial = editGroupTarget,
             onDismiss = { showGroupDialog = false },
             onConfirm = { name, required ->
-                persist(
+                onPersist(
                     if (editGroupTarget != null) {
                         groups.map {
                             if (it.id == editGroupTarget!!.id) {
@@ -280,7 +307,7 @@ fun SelinuxRulesPage(
             onDismiss = { showRuleDialog = false },
             onConfirm = { rule ->
                 val gid = ruleGroupId ?: return@RuleEditorDialog
-                persist(
+                onPersist(
                     groups.map { g ->
                         if (g.id != gid) {
                             g
@@ -771,4 +798,44 @@ private fun RuleTextField(
         textStyle = textStyle,
         singleLine = true,
     )
+}
+
+private val sampleRules =
+    listOf(
+        SelinuxRule(src = "untrusted_app", tgt = "sysfs", cls = "file", perm = "read", effect = AvTab.ALLOWED),
+        SelinuxRule(src = "shell", tgt = "dalvikcache_data_file", cls = "file", perm = "write", effect = AvTab.AUDITALLOW),
+        SelinuxRule(src = "system_app", tgt = "selinuxfs", cls = "file", perm = "write", effect = AvTab.ALLOWED, invert = true),
+    )
+
+private val sampleGroups =
+    listOf(
+        SelinuxGroup(id = 1L, name = "Common Apps", rules = sampleRules.take(2), expanded = true),
+        SelinuxGroup(id = 2L, name = "System Rules", rules = sampleRules.drop(2), expanded = false),
+        SelinuxGroup(id = 3L, name = "Empty Group", rules = emptyList(), expanded = true),
+    )
+
+@Preview(showBackground = true)
+@Composable
+fun SelinuxRulesPagePreview() {
+    NekosuTheme {
+        SelinuxRulesContent(
+            groups = sampleGroups,
+            onPersist = {},
+            onBackClick = {},
+            onAddRule = { 0 },
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun EmptyStatePreview() {
+    NekosuTheme {
+        SelinuxRulesContent(
+            groups = emptyList(),
+            onPersist = {},
+            onBackClick = {},
+            onAddRule = { 0 },
+        )
+    }
 }

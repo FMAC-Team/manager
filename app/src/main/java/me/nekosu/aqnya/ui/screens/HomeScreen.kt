@@ -381,14 +381,6 @@ fun StatCard(
     }
 }
 
-data class StatusConfig(
-    val containerColor: Color,
-    val contentColor: Color,
-    val icon: ImageVector,
-    val title: String,
-    val subtitle: String,
-)
-
 @Composable
 fun DeviceInfoCard(modifier: Modifier = Modifier) {
     val context = LocalContext.current
