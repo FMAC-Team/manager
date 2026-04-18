@@ -69,19 +69,15 @@ enum class InstallStatus {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
-    viewModel: HomeViewModel,
-    onNavigateToApps: () -> Unit = {},
-    onNavigateToRules: () -> Unit = {},
+fun HomeScreenContent(
+    installStatus: InstallStatus,
+    suCount: Int,
+    ruleCount: Int,
+    showRules: Boolean,
+    onNavigateToApps: () -> Unit,
+    onNavigateToRules: () -> Unit,
+    onInstallClick: () -> Unit,
 ) {
-    val context = LocalContext.current
-    var showInstallSheet by remember { mutableStateOf(false) }
-    val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
-
-    val installStatus by viewModel.installStatus.collectAsState()
-    val suCount by viewModel.suCount.collectAsState()
-    val ruleCount by viewModel.ruleCount.collectAsState()
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -112,14 +108,7 @@ fun HomeScreen(
         ) {
             StatusCard(
                 status = installStatus,
-                onClick = {
-                    if (installStatus != InstallStatus.INSTALLED) {
-                        showInstallSheet = true
-                        ncore.ctl(1)
-                    } else {
-                        Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
-                    }
-                },
+                onClick = onInstallClick,
             )
 
             Row(
@@ -147,6 +136,39 @@ fun HomeScreen(
             DeviceInfoCard(modifier = Modifier.fillMaxWidth())
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeScreen(
+    viewModel: HomeViewModel,
+    onNavigateToApps: () -> Unit = {},
+    onNavigateToRules: () -> Unit = {},
+) {
+    val context = LocalContext.current
+    var showInstallSheet by remember { mutableStateOf(false) }
+    val showRules by DebugPreferences.showRulesFlow(context).collectAsState(initial = false)
+
+    val installStatus by viewModel.installStatus.collectAsState()
+    val suCount by viewModel.suCount.collectAsState()
+    val ruleCount by viewModel.ruleCount.collectAsState()
+
+    HomeScreenContent(
+        installStatus = installStatus,
+        suCount = suCount,
+        ruleCount = ruleCount,
+        showRules = showRules,
+        onNavigateToApps = onNavigateToApps,
+        onNavigateToRules = onNavigateToRules,
+        onInstallClick = {
+            if (installStatus != InstallStatus.INSTALLED) {
+                showInstallSheet = true
+                ncore.ctl(1)
+            } else {
+                Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
 
     if (showInstallSheet) {
         me.nekosu.aqnya
@@ -326,11 +348,10 @@ fun StatCard(
                 Icon(
                     imageVector = bgIcon,
                     contentDescription = null,
-                    modifier =
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .size(58.dp)
-                            .padding(end = 18.dp, bottom = 12.dp),
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .size(58.dp)
+                        .padding(end=18.dp, bottom=12.dp),
                     tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f),
                 )
             }
@@ -471,41 +492,34 @@ fun DeviceInfoItem(
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, name = "Installed")
 @Composable
-fun HomeScreenPreview() {
+fun HomeScreenPreviewInstalled() {
     MaterialTheme {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            // 1. 预览：已安装状态的卡片
-            StatusCard(
-                status = InstallStatus.INSTALLED,
-                onClick = {},
-            )
-            // 2. 预览：未安装状态的卡片
-            StatusCard(
-                status = InstallStatus.NOT_INSTALLED,
-                onClick = {},
-            )
-            // 3. 预览：并排的统计卡片
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(
-                    label = "超级用户",
-                    value = "0",
-                    bgIcon = Icons.Filled.Numbers,
-                    modifier = Modifier.weight(1f),
-                )
-                StatCard(
-                    label = "FMAC 规则",
-                    value = "0",
-                    bgIcon = Icons.Filled.Rule,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            // 4. 预览：设备信息卡片
-            DeviceInfoCard()
-        }
+        HomeScreenContent(
+            installStatus = InstallStatus.INSTALLED,
+            suCount = 0,
+            ruleCount = 0,
+            showRules = true,
+            onNavigateToApps = {},
+            onNavigateToRules = {},
+            onInstallClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Not Install")
+@Composable
+fun HomeScreenPreviewNotInstalled() {
+    MaterialTheme {
+        HomeScreenContent(
+            installStatus = InstallStatus.NOT_INSTALLED,
+            suCount = 0,
+            ruleCount = 0,
+            showRules = true,
+            onNavigateToApps = {},
+            onNavigateToRules = {},
+            onInstallClick = {}
+        )
     }
 }
