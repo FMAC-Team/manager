@@ -460,7 +460,7 @@ fun MainScreen() {
                                 invert = rule.invert,
                             )
                         },
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navController.popBackStack() },
                     )
                 }
             }
