@@ -81,6 +81,7 @@ import me.nekosu.aqnya.util.DebugPreferences
 import me.nekosu.aqnya.util.MiuiPermissionUtils
 import me.nekosu.aqnya.util.NavBarStyle
 import me.nekosu.aqnya.util.rememberPermissionState
+import me.nekosu.aqnya.ncore
 
 @Composable
 fun FloatingBottomNavigationBar(
@@ -447,6 +448,20 @@ fun MainScreen() {
                         LoadingState()
                     }
                 }
+                composable("selinux_rules") {
+    SelinuxRulesPage(
+        onAddRule = { rule ->
+            ncore.addSelinuxRule(
+                src    = rule.src.ifBlank { null },
+                tgt    = rule.tgt.ifBlank { null },
+                cls    = rule.cls.ifBlank { null },
+                perm   = rule.perm.ifBlank { null },
+                effect = rule.effect,
+                invert = rule.invert,
+            )
+        }
+    )
+}
             }
 
             CheckUpdate(owner = "aqnya", repo = "nekosu")
