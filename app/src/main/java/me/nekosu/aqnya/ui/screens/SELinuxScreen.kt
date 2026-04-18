@@ -39,20 +39,20 @@ private val KEY_GROUPS = stringPreferencesKey("groups")
 private val json = Json { ignoreUnknownKeys = true }
 
 object AvTab {
-    const val ALLOWED    = 1
+    const val ALLOWED = 1
     const val AUDITALLOW = 2
-    const val AUDITDENY  = 8
+    const val AUDITDENY = 8
     const val TRANSITION = 16
 }
 
 @Serializable
 data class SelinuxRule(
     val id: Long = System.currentTimeMillis(),
-    val src: String  = "",
-    val tgt: String  = "",
-    val cls: String  = "",
+    val src: String = "",
+    val tgt: String = "",
+    val cls: String = "",
     val perm: String = "",
-    val effect: Int  = AvTab.ALLOWED,
+    val effect: Int = AvTab.ALLOWED,
     val invert: Boolean = false,
 )
 
@@ -83,7 +83,7 @@ fun SelinuxRulesPage(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val scope   = rememberCoroutineScope()
+    val scope = rememberCoroutineScope()
 
     val persistedGroups by context.groupsFlow().collectAsState(initial = emptyList())
     var groups by remember { mutableStateOf<List<SelinuxGroup>>(emptyList()) }
@@ -101,18 +101,21 @@ fun SelinuxRulesPage(
     }
 
     val snackState = remember { SnackbarHostState() }
-    var snackMsg   by remember { mutableStateOf<String?>(null) }
+    var snackMsg by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(snackMsg) {
-        snackMsg?.let { snackState.showSnackbar(it); snackMsg = null }
+        snackMsg?.let {
+            snackState.showSnackbar(it)
+            snackMsg = null
+        }
     }
 
     // Dialog state
     var showGroupDialog by remember { mutableStateOf(false) }
     var editGroupTarget by remember { mutableStateOf<SelinuxGroup?>(null) }
-    var showRuleDialog  by remember { mutableStateOf(false) }
-    var editRuleTarget  by remember { mutableStateOf<SelinuxRule?>(null) }
-    var ruleGroupId     by remember { mutableStateOf<Long?>(null) }
+    var showRuleDialog by remember { mutableStateOf(false) }
+    var editRuleTarget by remember { mutableStateOf<SelinuxRule?>(null) }
+    var ruleGroupId by remember { mutableStateOf<Long?>(null) }
 
     val totalRules = groups.sumOf { it.rules.size }
 
@@ -128,7 +131,8 @@ fun SelinuxRulesPage(
                 if (totalRules > 0) {
                     SmallFloatingActionButton(
                         onClick = {
-                            var ok = 0; var fail = 0
+                            var ok = 0
+                            var fail = 0
                             groups.forEach { g ->
                                 g.rules.forEach { r ->
                                     if (onAddRule(r) == 0) ok++ else fail++
@@ -142,7 +146,10 @@ fun SelinuxRulesPage(
                     }
                 }
                 ExtendedFloatingActionButton(
-                    onClick = { editGroupTarget = null; showGroupDialog = true },
+                    onClick = {
+                        editGroupTarget = null
+                        showGroupDialog = true
+                    },
                     icon = { Icon(Icons.Default.CreateNewFolder, contentDescription = null) },
                     text = { Text("New Group") },
                 )
@@ -154,10 +161,11 @@ fun SelinuxRulesPage(
                     Column {
                         Text(
                             "SELinux Rules",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Monospace,
-                            )
+                            style =
+                                MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontFamily = FontFamily.Monospace,
+                                ),
                         )
                         Text(
                             "${groups.size} group(s) · $totalRules rule(s)",
@@ -172,17 +180,18 @@ fun SelinuxRulesPage(
                             Icon(Icons.Default.DeleteSweep, contentDescription = "Clear all")
                         }
                     }
-                }
+                },
             )
-        }
+        },
     ) { padding ->
         if (groups.isEmpty()) {
             EmptyState(Modifier.padding(padding))
         } else {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding),
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .padding(padding),
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -190,14 +199,20 @@ fun SelinuxRulesPage(
                     GroupCard(
                         group = group,
                         onToggleExpand = {
-                            persist(groups.map {
-                                if (it.id == group.id) it.copy(expanded = !it.expanded) else it
-                            })
+                            persist(
+                                groups.map {
+                                    if (it.id == group.id) it.copy(expanded = !it.expanded) else it
+                                },
+                            )
                         },
-                        onEditGroup = { editGroupTarget = group; showGroupDialog = true },
+                        onEditGroup = {
+                            editGroupTarget = group
+                            showGroupDialog = true
+                        },
                         onDeleteGroup = { persist(groups.filter { it.id != group.id }) },
                         onApplyGroup = {
-                            var ok = 0; var fail = 0
+                            var ok = 0
+                            var fail = 0
                             group.rules.forEach { r ->
                                 if (onAddRule(r) == 0) ok++ else fail++
                             }
@@ -215,11 +230,15 @@ fun SelinuxRulesPage(
                             showRuleDialog = true
                         },
                         onDeleteRule = { rule ->
-                            persist(groups.map {
-                                if (it.id == group.id)
-                                    it.copy(rules = it.rules.filter { r -> r.id != rule.id })
-                                else it
-                            })
+                            persist(
+                                groups.map {
+                                    if (it.id == group.id) {
+                                        it.copy(rules = it.rules.filter { r -> r.id != rule.id })
+                                    } else {
+                                        it
+                                    }
+                                },
+                            )
                         },
                         onApplyRule = { rule ->
                             val ret = onAddRule(rule)
@@ -240,16 +259,18 @@ fun SelinuxRulesPage(
                 persist(
                     if (editGroupTarget != null) {
                         groups.map {
-                            if (it.id == editGroupTarget!!.id)
+                            if (it.id == editGroupTarget!!.id) {
                                 it.copy(name = name, required = required)
-                            else it
+                            } else {
+                                it
+                            }
                         }
                     } else {
                         groups + SelinuxGroup(name = name, required = required)
-                    }
+                    },
                 )
                 showGroupDialog = false
-            }
+            },
         )
     }
 
@@ -259,18 +280,24 @@ fun SelinuxRulesPage(
             onDismiss = { showRuleDialog = false },
             onConfirm = { rule ->
                 val gid = ruleGroupId ?: return@RuleEditorDialog
-                persist(groups.map { g ->
-                    if (g.id != gid) g
-                    else if (editRuleTarget != null) {
-                        g.copy(rules = g.rules.map {
-                            if (it.id == editRuleTarget!!.id) rule.copy(id = it.id) else it
-                        })
-                    } else {
-                        g.copy(rules = g.rules + rule)
-                    }
-                })
+                persist(
+                    groups.map { g ->
+                        if (g.id != gid) {
+                            g
+                        } else if (editRuleTarget != null) {
+                            g.copy(
+                                rules =
+                                    g.rules.map {
+                                        if (it.id == editRuleTarget!!.id) rule.copy(id = it.id) else it
+                                    },
+                            )
+                        } else {
+                            g.copy(rules = g.rules + rule)
+                        }
+                    },
+                )
                 showRuleDialog = false
-            }
+            },
         )
     }
 }
@@ -290,15 +317,17 @@ private fun GroupCard(
     val requiredColor = if (group.required) Color(0xFF1565C0) else MaterialTheme.colorScheme.outline
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .animateContentSize(),
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { onToggleExpand() }
-                .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleExpand() }
+                    .padding(start = 16.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -311,10 +340,11 @@ private fun GroupCard(
             Column(Modifier.weight(1f)) {
                 Text(
                     group.name,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold,
-                    ),
+                    style =
+                        MaterialTheme.typography.titleSmall.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Bold,
+                        ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -326,9 +356,10 @@ private fun GroupCard(
                         Text(
                             if (group.required) "required" else "optional",
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = FontFamily.Monospace
-                            ),
+                            style =
+                                MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                ),
                             color = requiredColor,
                         )
                     }
@@ -340,20 +371,34 @@ private fun GroupCard(
                 }
             }
             IconButton(onClick = onApplyGroup, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.PlayArrow, contentDescription = "Apply group",
-                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.PlayArrow,
+                    contentDescription = "Apply group",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onAddRule, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Add, contentDescription = "Add rule",
-                    modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "Add rule",
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onEditGroup, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit group",
-                    modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.Edit,
+                    contentDescription = "Edit group",
+                    modifier = Modifier.size(18.dp),
+                )
             }
             IconButton(onClick = onDeleteGroup, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete group",
-                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Delete group",
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(18.dp),
+                )
             }
         }
 
@@ -400,19 +445,21 @@ private fun RuleCard(
     onDelete: () -> Unit,
     onApply: () -> Unit,
 ) {
-    val effectColor = when (rule.effect) {
-        AvTab.ALLOWED    -> if (rule.invert) MaterialTheme.colorScheme.error else Color(0xFF2E7D32)
-        AvTab.AUDITDENY  -> MaterialTheme.colorScheme.error
-        AvTab.AUDITALLOW -> Color(0xFF1565C0)
-        else             -> MaterialTheme.colorScheme.outline
-    }
-    val effectLabel = when (rule.effect) {
-        AvTab.ALLOWED    -> if (rule.invert) "DENY" else "ALLOW"
-        AvTab.AUDITDENY  -> "AUDITDENY"
-        AvTab.AUDITALLOW -> "AUDITALLOW"
-        AvTab.TRANSITION -> "TRANSITION"
-        else             -> "effect=${rule.effect}"
-    }
+    val effectColor =
+        when (rule.effect) {
+            AvTab.ALLOWED -> if (rule.invert) MaterialTheme.colorScheme.error else Color(0xFF2E7D32)
+            AvTab.AUDITDENY -> MaterialTheme.colorScheme.error
+            AvTab.AUDITALLOW -> Color(0xFF1565C0)
+            else -> MaterialTheme.colorScheme.outline
+        }
+    val effectLabel =
+        when (rule.effect) {
+            AvTab.ALLOWED -> if (rule.invert) "DENY" else "ALLOW"
+            AvTab.AUDITDENY -> "AUDITDENY"
+            AvTab.AUDITALLOW -> "AUDITALLOW"
+            AvTab.TRANSITION -> "TRANSITION"
+            else -> "effect=${rule.effect}"
+        }
 
     Surface(
         shape = RoundedCornerShape(10.dp),
@@ -426,36 +473,51 @@ private fun RuleCard(
                         effectLabel,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                         color = effectColor,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontFamily = FontFamily.Monospace,
-                            fontWeight = FontWeight.Bold,
-                        )
+                        style =
+                            MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                                fontWeight = FontWeight.Bold,
+                            ),
                     )
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onApply, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = "Apply",
-                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = "Apply",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
                 IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit",
-                        modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete",
-                        tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(16.dp),
+                    )
                 }
             }
-            RuleRow("src",  rule.src)
-            RuleRow("tgt",  rule.tgt)
-            RuleRow("cls",  rule.cls)
+            RuleRow("src", rule.src)
+            RuleRow("tgt", rule.tgt)
+            RuleRow("cls", rule.cls)
             RuleRow("perm", rule.perm)
         }
     }
 }
 
 @Composable
-private fun RuleRow(label: String, value: String) {
+private fun RuleRow(
+    label: String,
+    value: String,
+) {
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             label,
@@ -466,8 +528,12 @@ private fun RuleRow(label: String, value: String) {
         Text(
             value.ifBlank { "*" },
             style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
-            color = if (value.isBlank()) MaterialTheme.colorScheme.outline
-                    else MaterialTheme.colorScheme.onSurface,
+            color =
+                if (value.isBlank()) {
+                    MaterialTheme.colorScheme.outline
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -487,11 +553,16 @@ private fun EmptyState(modifier: Modifier = Modifier) {
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.outlineVariant,
             )
-            Text("No groups", style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Tap \"New Group\" to get started",
+            Text(
+                "No groups",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "Tap \"New Group\" to get started",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline)
+                color = MaterialTheme.colorScheme.outline,
+            )
         }
     }
 }
@@ -502,7 +573,7 @@ private fun GroupEditorDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, required: Boolean) -> Unit,
 ) {
-    var name     by remember { mutableStateOf(initial?.name ?: "") }
+    var name by remember { mutableStateOf(initial?.name ?: "") }
     var required by remember { mutableStateOf(initial?.required ?: true) }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -513,10 +584,11 @@ private fun GroupEditorDialog(
             ) {
                 Text(
                     if (initial == null) "New Group" else "Edit Group",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace,
-                    )
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                        ),
                 )
                 OutlinedTextField(
                     value = name,
@@ -524,17 +596,19 @@ private fun GroupEditorDialog(
                     label = { Text("Group name") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
+                    textStyle =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                        ),
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { required = !required }
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { required = !required }
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text("Required", style = MaterialTheme.typography.bodyMedium)
@@ -568,20 +642,21 @@ private fun RuleEditorDialog(
     onDismiss: () -> Unit,
     onConfirm: (SelinuxRule) -> Unit,
 ) {
-    var src    by remember { mutableStateOf(initial?.src   ?: "") }
-    var tgt    by remember { mutableStateOf(initial?.tgt   ?: "") }
-    var cls    by remember { mutableStateOf(initial?.cls   ?: "") }
-    var perm   by remember { mutableStateOf(initial?.perm  ?: "") }
+    var src by remember { mutableStateOf(initial?.src ?: "") }
+    var tgt by remember { mutableStateOf(initial?.tgt ?: "") }
+    var cls by remember { mutableStateOf(initial?.cls ?: "") }
+    var perm by remember { mutableStateOf(initial?.perm ?: "") }
     var effect by remember { mutableStateOf(initial?.effect ?: AvTab.ALLOWED) }
     var invert by remember { mutableStateOf(initial?.invert ?: false) }
     var effectExpanded by remember { mutableStateOf(false) }
 
-    val effectOptions = listOf(
-        AvTab.ALLOWED    to "ALLOW",
-        AvTab.AUDITALLOW to "AUDITALLOW",
-        AvTab.AUDITDENY  to "AUDITDENY",
-        AvTab.TRANSITION to "TRANSITION",
-    )
+    val effectOptions =
+        listOf(
+            AvTab.ALLOWED to "ALLOW",
+            AvTab.AUDITALLOW to "AUDITALLOW",
+            AvTab.AUDITDENY to "AUDITDENY",
+            AvTab.TRANSITION to "TRANSITION",
+        )
     val mono = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace)
 
     Dialog(onDismissRequest = onDismiss) {
@@ -595,15 +670,17 @@ private fun RuleEditorDialog(
             ) {
                 Text(
                     if (initial == null) "Add Rule" else "Edit Rule",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace,
-                    )
+                    style =
+                        MaterialTheme.typography.titleLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontFamily = FontFamily.Monospace,
+                        ),
                 )
 
                 val fm = Modifier.fillMaxWidth()
-                RuleTextField(fm, "src (empty = *)",  src,  mono) { src  = it }
-                RuleTextField(fm, "tgt (empty = *)",  tgt,  mono) { tgt  = it }
-                RuleTextField(fm, "cls (empty = *)",  cls,  mono) { cls  = it }
+                RuleTextField(fm, "src (empty = *)", src, mono) { src = it }
+                RuleTextField(fm, "tgt (empty = *)", tgt, mono) { tgt = it }
+                RuleTextField(fm, "cls (empty = *)", cls, mono) { cls = it }
                 RuleTextField(fm, "perm (empty = *)", perm, mono) { perm = it }
 
                 ExposedDropdownMenuBox(
@@ -626,7 +703,10 @@ private fun RuleEditorDialog(
                         effectOptions.forEach { (v, label) ->
                             DropdownMenuItem(
                                 text = { Text(label, fontFamily = FontFamily.Monospace) },
-                                onClick = { effect = v; effectExpanded = false },
+                                onClick = {
+                                    effect = v
+                                    effectExpanded = false
+                                },
                             )
                         }
                     }
@@ -634,17 +714,20 @@ private fun RuleEditorDialog(
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { invert = !invert }
-                        .padding(horizontal = 4.dp, vertical = 8.dp),
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { invert = !invert }
+                            .padding(horizontal = 4.dp, vertical = 8.dp),
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text("Invert", style = MaterialTheme.typography.bodyMedium)
-                        Text("ALLOW → DENY",
+                        Text(
+                            "ALLOW → DENY",
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
                     Switch(checked = invert, onCheckedChange = { invert = it })
                 }
@@ -655,11 +738,16 @@ private fun RuleEditorDialog(
                 ) {
                     TextButton(onClick = onDismiss) { Text("Cancel") }
                     Button(onClick = {
-                        onConfirm(SelinuxRule(
-                            src = src.trim(), tgt = tgt.trim(),
-                            cls = cls.trim(), perm = perm.trim(),
-                            effect = effect, invert = invert,
-                        ))
+                        onConfirm(
+                            SelinuxRule(
+                                src = src.trim(),
+                                tgt = tgt.trim(),
+                                cls = cls.trim(),
+                                perm = perm.trim(),
+                                effect = effect,
+                                invert = invert,
+                            ),
+                        )
                     }) { Text("Save") }
                 }
             }

@@ -51,14 +51,16 @@ fun DebugSettingsScreen(navController: NavController) {
                 },
             )
         },
-        contentWindowInsets = WindowInsets.safeDrawing.only(
-            WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-        ),
+        contentWindowInsets =
+            WindowInsets.safeDrawing.only(
+                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+            ),
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
         ) {
             ListItem(
                 modifier = Modifier.fillMaxWidth(),
@@ -87,9 +89,10 @@ fun DebugSettingsScreen(navController: NavController) {
             )
 
             ListItem(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { navController.navigate("selinux_rules") },
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate("selinux_rules") },
                 leadingContent = {
                     Icon(Icons.Outlined.Security, contentDescription = null)
                 },
