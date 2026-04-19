@@ -81,13 +81,17 @@ jobs:
         path: zig-x86_64-linux-0.16.0
         key: zig-0.16.0
 
-    - name: Download Zig
+    - name: Download Zig 0.15.2
       if: steps.cache-zig-015.outputs.cache-hit != 'true'
       run: |
         curl -OL https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
-        curl -OL https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
         tar -xf zig-x86_64-linux-0.15.2.tar.xz
-        tar -xf zig-x86_64-linux-0.16.0.tar.xz
+
+    - name: Download Zig 0.16.0
+      if: steps.cache-zig-016.outputs.cache-hit != 'true'
+      run: |
+        curl -OL https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
+        tar -xf zig-x86_64-linux-0.16.0.tar.xz        
 
     - name: Build ncore
       run: |
