@@ -68,21 +68,21 @@ jobs:
         if-no-files-found: error
 
     - name: Cache Zig 0.15.2
-      id: cache-zig-0.15.2
+      id: cache-zig-015
       uses: actions/cache@v4
       with:
         path: zig-x86_64-linux-0.15.2
         key: zig-0.15.2
         
     - name: Cache Zig 0.16.0
-      id: cache-zig-0.16.0
+      id: cache-zig-016
       uses: actions/cache@v4
       with:
         path: zig-x86_64-linux-0.16.0
         key: zig-0.16.0
 
     - name: Download Zig
-      if: steps.cache-zig.outputs.cache-hit != 'true'
+      if: steps.cache-zig-015.outputs.cache-hit != 'true'
       run: |
         curl -OL https://ziglang.org/download/0.15.2/zig-x86_64-linux-0.15.2.tar.xz
         curl -OL https://ziglang.org/download/0.16.0/zig-x86_64-linux-0.16.0.tar.xz
