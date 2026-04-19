@@ -18,7 +18,7 @@ class NkApplication : Application() {
     }
 
     override fun attachBaseContext(base: Context) {
-        System.loadLibrary("ncore_init")
+        System.loadLibrary("ncore2")
         super.attachBaseContext(base)
     }
 
