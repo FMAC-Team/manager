@@ -117,6 +117,18 @@ private val licenseList =
             LicenseType.Apache2,
         ),
         LicenseItem(
+            "Zig Software Foundation",
+            "Zig Programming Language",
+            "https://codeberg.org/ziglang/zig",
+            LicenseType.MIT,
+        ),
+        LicenseItem(
+            "Google",
+            "Flutter",
+            "https://github.com/flutter/flutter",
+            LicenseType.BSD3,
+        ),
+        LicenseItem(
             "JetBrains",
             "Kotlin",
             "https://github.com/JetBrains/kotlin",
@@ -159,6 +171,7 @@ enum class LicenseType {
     Apache2,
     MIT,
     GPL3,
+    BSD3,
 }
 
 private fun getLicense(type: LicenseType): String =
@@ -166,6 +179,7 @@ private fun getLicense(type: LicenseType): String =
         LicenseType.Apache2 -> "Apache Software License 2.0"
         LicenseType.MIT -> "MIT License"
         LicenseType.GPL3 -> "GNU general public license Version 3"
+        LicenseType.BSD3 -> "BSD 3-Clause \"New\" or \"Revised\" License"
     }
 
 @Preview(showBackground = true)
