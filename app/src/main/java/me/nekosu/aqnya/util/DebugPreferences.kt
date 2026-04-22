@@ -17,7 +17,7 @@ object DebugPreferences {
 
     fun themeModeFlow(context: Context): Flow<Int> = context.prefsFlow { getInt("${PREFIX}theme_mode", 0) }
 
-    fun navBarStyleFlow(context: Context): Flow<Int> = context.prefsFlow { getInt("${PREFIX}nav_bar_style", 2) }
+    fun navBarStyleFlow(context: Context): Flow<Int> = context.prefsFlow { getInt("${PREFIX}nav_bar_style", 1) }
 
     fun setShowRules(
         context: Context,
