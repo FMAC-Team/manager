@@ -58,8 +58,12 @@ val DEFAULT_CAPS: Set<LinuxCap> =
         LinuxCap.CAP_SETGID,
         LinuxCap.CAP_SYS_ADMIN,
     )
-    
-enum class NksuNamespace(val value: Int, val label: String, val description: String) {
+
+enum class NksuNamespace(
+    val value: Int,
+    val label: String,
+    val description: String,
+) {
     INHERITED(0, "继承", "沿用调用方的 mount 命名空间"),
     INDIVIDUAL(1, "独立", "为此 UID 创建独立 mount 命名空间"),
     GLOBAL(2, "全局", "加入全局共享命名空间"),
