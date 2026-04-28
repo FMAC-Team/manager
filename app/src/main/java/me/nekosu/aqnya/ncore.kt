@@ -54,4 +54,6 @@ object ncore {
         effect: Int,
         invert: Boolean,
     ): Int
+    
+    external fun setProfile(uid: Int, caps: Long, domain: String, namespace: Int): Int
 }
