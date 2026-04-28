@@ -17,11 +17,12 @@ class NkApplication : Application() {
         }
     }
 
+/*
     override fun attachBaseContext(base: Context) {
         System.loadLibrary("ncore2")
         super.attachBaseContext(base)
     }
-
+*/
     override fun onCreate() {
         super.onCreate()
         CrashHandler.init(this)
