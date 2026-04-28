@@ -13,7 +13,6 @@ object ncore_loader {
         try {
             System.loadLibrary("ncore")
             isLibraryLoaded = true
-            Log.d(TAG, "ncore library loaded successfully.")
         } catch (e: UnsatisfiedLinkError) {
             Log.e(TAG, "Failed to load ncore library: ${e.message}")
         }
