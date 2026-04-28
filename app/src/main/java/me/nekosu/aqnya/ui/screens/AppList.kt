@@ -183,14 +183,13 @@ class AppViewModel(
 
                 appConfigs = configs
 
-                val nc = ncore
                 val pm = context.packageManager
                 for ((pkg, cfg) in configs) {
                     try {
                         val uid = pm.getApplicationInfo(pkg, 0).uid
-                        if (nc.hasuid(uid) == 0) nc.adduid(uid)
+                        if (ncore.hasuid(uid) == 0) ncore.adduid(uid)
                         val capsBits = cfg.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
-                        nc.setCap(uid, capsBits)
+                        ncore.setCap(uid, capsBits)
                     } catch (_: Exception) {
                     }
                 }
@@ -284,13 +283,13 @@ class AppViewModel(
                     )
                 prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
 
-                nc.adduid(app.uid)
+                ncore.adduid(app.uid)
                 val capsBits = config.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
-                nc.setCap(app.uid, capsBits)
+                ncore.setCap(app.uid, capsBits)
             } else {
                 prefs.edit().remove("caps_${app.packageName}").apply()
-                nc.delCap(app.uid)
-                nc.deluid(app.uid)
+                ncore.delCap(app.uid)
+                ncore.deluid(app.uid)
             }
         }
     }
