@@ -12,6 +12,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -85,33 +86,29 @@ fun CapsDialog(
                 Spacer(Modifier.height(4.dp))
 
                 Column(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .heightIn(max = 380.dp)
-                            .verticalScroll(rememberScrollState()),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 380.dp)
+                        .verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(2.dp),
                 ) {
                     LinuxCap.entries.forEach { cap ->
                         val checked = draft.contains(cap)
                         Row(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(10.dp))
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
-                                    ) {
-                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                        draft = if (checked) draft - cap else draft + cap
-                                    }.padding(vertical = 4.dp, horizontal = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(10.dp))
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    draft = if (checked) draft - cap else draft + cap
+                                }
+                                .padding(vertical = 4.dp, horizontal = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Checkbox(
-                                checked = checked,
-                                onCheckedChange = null,
-                            )
+                            Checkbox(checked = checked, onCheckedChange = null)
                             Spacer(Modifier.width(6.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
@@ -146,9 +143,7 @@ fun CapsDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("取消")
-            }
+            TextButton(onClick = onDismiss) { Text("取消") }
         },
     )
 }
@@ -164,6 +159,8 @@ fun AppDetailScreen(
 ) {
     var allowed by remember { mutableStateOf(config?.allowed ?: false) }
     var caps by remember { mutableStateOf(config?.caps ?: DEFAULT_CAPS) }
+    var domain by remember { mutableStateOf(config?.selinuxDomain ?: "u:r:nksu:s0") }
+    var ns by remember { mutableStateOf(config?.namespace ?: NksuNamespace.INHERITED) }
     var showCapsDialog by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
 
@@ -207,7 +204,14 @@ fun AppDetailScreen(
                 actions = {
                     TextButton(onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                        onSave(AppConfig(allowed = allowed, caps = caps))
+                        onSave(
+                            AppConfig(
+                                allowed = allowed,
+                                caps = caps,
+                                selinuxDomain = domain,
+                                namespace = ns,
+                            )
+                        )
                         onBack()
                     }) {
                         Text("保存", fontWeight = FontWeight.SemiBold)
@@ -217,11 +221,10 @@ fun AppDetailScreen(
         },
     ) { innerPadding ->
         LazyColumn(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp),
             contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
         ) {
@@ -229,25 +232,22 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                        ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+                    ),
                 ) {
                     Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(14.dp),
                     ) {
                         AppIcon(
                             packageName = app.packageName,
-                            modifier =
-                                Modifier
-                                    .size(52.dp)
-                                    .clip(RoundedCornerShape(12.dp)),
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(12.dp)),
                         )
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
@@ -277,32 +277,26 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (allowed)
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                    ),
                 ) {
                     Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = if (allowed) Icons.Default.LockOpen else Icons.Default.Lock,
                             contentDescription = null,
-                            tint =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                            tint = if (allowed)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -324,16 +318,15 @@ fun AppDetailScreen(
                                 allowed = it
                                 if (!it) {
                                     caps = emptySet()
+                                    domain = "u:r:nksu:s0"
+                                    ns = NksuNamespace.INHERITED
                                 } else if (caps.isEmpty()) {
                                     caps = DEFAULT_CAPS
                                 }
                             },
-                            thumbContent =
-                                if (allowed) {
-                                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                                } else {
-                                    null
-                                },
+                            thumbContent = if (allowed) {
+                                { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
+                            } else null,
                         )
                     }
                 }
@@ -348,15 +341,13 @@ fun AppDetailScreen(
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                when {
-                                    !allowed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
-                                    caps.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
-                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
+                    colors = CardDefaults.cardColors(
+                        containerColor = when {
+                            !allowed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
+                            caps.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
+                            else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
+                        },
+                    ),
                     onClick = {
                         if (allowed) {
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
@@ -365,21 +356,18 @@ fun AppDetailScreen(
                     },
                 ) {
                     Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = null,
-                            tint =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                },
+                            tint = if (allowed)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -387,22 +375,19 @@ fun AppDetailScreen(
                                 text = "${caps.size} / ${LinuxCap.entries.size} 已选",
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color =
-                                    if (allowed) {
-                                        MaterialTheme.colorScheme.onSurface
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    },
+                                color = if (allowed)
+                                    MaterialTheme.colorScheme.onSurface
+                                else
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                             )
                             if (allowed) {
                                 Text(
-                                    text =
-                                        if (caps.isEmpty()) {
-                                            "无 capabilities"
-                                        } else {
-                                            caps.take(4).joinToString(" · ") { it.label } +
-                                                if (caps.size > 4) " +${caps.size - 4}" else ""
-                                        },
+                                    text = if (caps.isEmpty()) {
+                                        "无 capabilities"
+                                    } else {
+                                        caps.take(4).joinToString(" · ") { it.label } +
+                                            if (caps.size > 4) " +${caps.size - 4}" else ""
+                                    },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                     maxLines = 1,
@@ -423,6 +408,132 @@ fun AppDetailScreen(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
                                 modifier = Modifier.size(18.dp),
                             )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            item {
+                SectionLabel("SELinux Domain")
+                Spacer(Modifier.height(4.dp))
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (allowed && domain != "u:r:nksu:s0")
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                    ),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    ) {
+                        OutlinedTextField(
+                            value = domain,
+                            onValueChange = { domain = it },
+                            label = {
+                                Text(
+                                    "domain",
+                                    fontFamily = FontFamily.Monospace,
+                                    fontSize = 12.sp,
+                                )
+                            },
+                            singleLine = true,
+                            textStyle = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = FontFamily.Monospace,
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = allowed,
+                            trailingIcon = {
+                                if (domain != "u:r:nksu:s0") {
+                                    IconButton(
+                                        onClick = {
+                                            haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                                            domain = "u:r:nksu:s0"
+                                        },
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Refresh,
+                                            contentDescription = "重置",
+                                            modifier = Modifier.size(18.dp),
+                                        )
+                                    }
+                                }
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                        )
+                        if (!allowed) {
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                "请先启用 Root 授权",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
+            item {
+                SectionLabel("Mount 命名空间")
+                Spacer(Modifier.height(4.dp))
+            }
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (allowed && ns != NksuNamespace.INHERITED)
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
+                        else
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f),
+                    ),
+                ) {
+                    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                        NksuNamespace.entries.forEach { option ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .clickable(
+                                        enabled = allowed,
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = null,
+                                    ) {
+                                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                        ns = option
+                                    }
+                                    .padding(horizontal = 16.dp, vertical = 10.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RadioButton(
+                                    selected = ns == option,
+                                    onClick = null,
+                                    enabled = allowed,
+                                )
+                                Spacer(Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = option.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (allowed)
+                                            MaterialTheme.colorScheme.onSurface
+                                        else
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                    )
+                                    Text(
+                                        text = option.description,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
