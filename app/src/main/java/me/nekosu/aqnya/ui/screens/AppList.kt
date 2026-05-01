@@ -290,7 +290,8 @@ class AppViewModel(
                         SetSerializer(String.serializer()),
                         config.caps.map { it.label }.toSet(),
                     )
-                prefs.edit()
+                prefs
+                    .edit()
                     .putString("caps_${app.packageName}", capsJson)
                     .putString("domain_${app.packageName}", config.selinuxDomain)
                     .putInt("ns_${app.packageName}", config.namespace.value)
@@ -300,7 +301,8 @@ class AppViewModel(
                 val capsBits = config.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
                 ncore.setProfile(app.uid, capsBits, config.selinuxDomain, config.namespace.value)
             } else {
-                prefs.edit()
+                prefs
+                    .edit()
                     .remove("caps_${app.packageName}")
                     .remove("domain_${app.packageName}")
                     .remove("ns_${app.packageName}")
