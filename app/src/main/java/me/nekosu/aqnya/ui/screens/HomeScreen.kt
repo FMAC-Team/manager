@@ -118,7 +118,7 @@ fun HomeScreenContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 StatCard(
-                    label = "超级用户",
+                    label = stringResource(R.string.superuser),
                     value = suCount.toString(),
                     modifier = Modifier.weight(1f),
                     bgIcon = Icons.Filled.Numbers,
@@ -126,7 +126,7 @@ fun HomeScreenContent(
                 )
                 if (showRules) {
                     StatCard(
-                        label = "FMAC 规则",
+                        label = stringResource(R.string.fmac_rules),
                         value = ruleCount.toString(),
                         modifier = Modifier.weight(1f),
                         bgIcon = Icons.Filled.Rule,
@@ -167,7 +167,7 @@ fun HomeScreen(
                 showInstallSheet = true
                 ncore.ctl(1)
             } else {
-                Toast.makeText(context, "服务运行正常", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.running), Toast.LENGTH_SHORT).show()
             }
         },
     )
@@ -219,13 +219,13 @@ fun StatusCard(
         }
     val titleText =
         when (status) {
-            InstallStatus.INSTALLED -> "已安装"
-            InstallStatus.NOT_INSTALLED -> "未安装"
+            InstallStatus.INSTALLED -> stringResource(R.string.installed)
+            InstallStatus.NOT_INSTALLED -> stringResource(R.string.not_installed)
         }
     val subText =
         when (status) {
-            InstallStatus.INSTALLED -> "服务运行正常"
-            InstallStatus.NOT_INSTALLED -> "点击安装"
+            InstallStatus.INSTALLED -> stringResource(R.string.running)
+            InstallStatus.NOT_INSTALLED -> stringResource(R.string.click_to_install)
         }
 
     Box(

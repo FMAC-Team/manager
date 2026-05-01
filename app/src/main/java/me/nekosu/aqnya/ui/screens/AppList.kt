@@ -536,7 +536,7 @@ fun LoadingState() {
     ) {
         CircularProgressIndicator(strokeWidth = 2.5.dp, modifier = Modifier.size(36.dp))
         Text(
-            "加载应用列表…",
+            stringResource(R.string.loading_app),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
         )
