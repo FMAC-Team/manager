@@ -163,6 +163,10 @@ class AppViewModel(
 
                 for (pkg in allowed) {
                     val capsJson = prefs.getString("caps_$pkg", null)
+                    val domain = prefs.getString("domain_$pkg", "u:r:nksu:s0") ?: "u:r:nksu:s0"
+                    val nsValue = prefs.getInt("ns_$pkg", NksuNamespace.INHERITED.value)
+                    val ns = NksuNamespace.entries.find { it.value == nsValue } ?: NksuNamespace.INHERITED
+
                     val caps =
                         if (capsJson != null) {
                             try {
@@ -178,7 +182,13 @@ class AppViewModel(
                         } else {
                             DEFAULT_CAPS
                         }
-                    configs[pkg] = AppConfig(allowed = true, caps = caps)
+                    configs[pkg] =
+                        AppConfig(
+                            allowed = true,
+                            caps = caps,
+                            selinuxDomain = domain,
+                            namespace = ns,
+                        )
                 }
 
                 appConfigs = configs
@@ -189,7 +199,7 @@ class AppViewModel(
                         val uid = pm.getApplicationInfo(pkg, 0).uid
                         if (ncore.hasuid(uid) == 0) ncore.adduid(uid)
                         val capsBits = cfg.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
-                        ncore.setCap(uid, capsBits)
+                        ncore.setProfile(uid, capsBits, cfg.selinuxDomain, cfg.namespace.value)
                     } catch (_: Exception) {
                     }
                 }
@@ -274,20 +284,27 @@ class AppViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             dbHelper.setAllowed(app.packageName, config.allowed)
 
-            val nc = ncore
             if (config.allowed) {
                 val capsJson =
                     json.encodeToString(
                         SetSerializer(String.serializer()),
                         config.caps.map { it.label }.toSet(),
                     )
-                prefs.edit().putString("caps_${app.packageName}", capsJson).apply()
+                prefs.edit()
+                    .putString("caps_${app.packageName}", capsJson)
+                    .putString("domain_${app.packageName}", config.selinuxDomain)
+                    .putInt("ns_${app.packageName}", config.namespace.value)
+                    .apply()
 
                 ncore.adduid(app.uid)
                 val capsBits = config.caps.fold(0L) { acc, cap -> acc or (1L shl cap.value) }
-                ncore.setCap(app.uid, capsBits)
+                ncore.setProfile(app.uid, capsBits, config.selinuxDomain, config.namespace.value)
             } else {
-                prefs.edit().remove("caps_${app.packageName}").apply()
+                prefs.edit()
+                    .remove("caps_${app.packageName}")
+                    .remove("domain_${app.packageName}")
+                    .remove("ns_${app.packageName}")
+                    .apply()
                 ncore.delCap(app.uid)
                 ncore.deluid(app.uid)
             }
