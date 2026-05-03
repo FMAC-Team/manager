@@ -12,9 +12,11 @@ object LogUtils {
     fun exportLogs(context: Context) {
         val logFile = File(context.cacheDir, "logcat.log")
         try {
-            Runtime.getRuntime().exec(
-                arrayOf("logcat", "-d", "-v", "threadtime", "-f", logFile.absolutePath)
-            ).waitFor()
+            Runtime
+                .getRuntime()
+                .exec(
+                    arrayOf("logcat", "-d", "-v", "threadtime", "-f", logFile.absolutePath),
+                ).waitFor()
         } catch (e: Exception) {
             Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
             return
@@ -27,16 +29,20 @@ object LogUtils {
         }
     }
 
-    private fun shareLogFile(context: Context, file: File) {
+    private fun shareLogFile(
+        context: Context,
+        file: File,
+    ) {
         val authority = "${context.packageName}.fileprovider"
         val contentUri: Uri = FileProvider.getUriForFile(context, authority, file)
 
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_STREAM, contentUri)
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            clipData = ClipData.newUri(context.contentResolver, "logcat.log", contentUri)
-        }
+        val intent =
+            Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_STREAM, contentUri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                clipData = ClipData.newUri(context.contentResolver, "logcat.log", contentUri)
+            }
 
         context.startActivity(Intent.createChooser(intent, "分享/导出日志"))
     }
