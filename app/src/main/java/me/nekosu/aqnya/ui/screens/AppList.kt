@@ -10,14 +10,10 @@ import androidx.compose.animation.*
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -29,7 +25,6 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Shape
@@ -43,7 +38,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -62,6 +56,7 @@ import kotlinx.serialization.json.Json
 import me.nekosu.aqnya.R
 import me.nekosu.aqnya.ncore
 import me.nekosu.aqnya.util.RootDbHelper
+import java.io.File
 
 @Serializable
 data class AppInfo(
@@ -137,6 +132,7 @@ class AppViewModel(
 
     private fun updateFilteredApps() {
         val q = searchQuery.trim().lowercase()
+        val configs = appConfigs
         filteredApps =
             allApps
                 .filter { app ->
@@ -147,50 +143,38 @@ class AppViewModel(
                             FilterMode.SYSTEM -> app.isSystem
                             FilterMode.USER -> !app.isSystem
                         }
-                    val passSearch =
+                    passFilter && (
                         q.isEmpty() ||
                             app.name.lowercase().contains(q) ||
-                            app.packageName.lowercase().contains(q)
-                    passFilter && passSearch
-                }.sortedBy { it.name.lowercase() }
+                            app.packageName.contains(q, ignoreCase = true)
+                    )
+                }.sortedWith(compareBy({ app -> if (app.packageName in configs) 0 else 1 }, { it.name.lowercase() }))
     }
 
-    private suspend fun loadAppConfigs() {
+    private fun readConfigFromPrefs(pkg: String): AppConfig {
+        val capsJson = prefs.getString("caps_$pkg", null)
+        val domain = prefs.getString("domain_$pkg", "u:r:nksu:s0") ?: "u:r:nksu:s0"
+        val nsValue = prefs.getInt("ns_$pkg", NksuNamespace.INHERITED.value)
+        val ns = NksuNamespace.entries.find { it.value == nsValue } ?: NksuNamespace.INHERITED
+        val caps =
+            if (capsJson != null) {
+                try {
+                    val capLabels = json.decodeFromString(SetSerializer(String.serializer()), capsJson)
+                    LinuxCap.entries.filter { it.label in capLabels }.toSet()
+                } catch (_: Exception) {
+                    DEFAULT_CAPS
+                }
+            } else {
+                DEFAULT_CAPS
+            }
+        return AppConfig(allowed = true, caps = caps, selinuxDomain = domain, namespace = ns)
+    }
+
+    private suspend fun loadAppConfigs() =
         withContext(Dispatchers.IO) {
             try {
                 val allowed = dbHelper.getAllowedPackages()
-                val configs = mutableMapOf<String, AppConfig>()
-
-                for (pkg in allowed) {
-                    val capsJson = prefs.getString("caps_$pkg", null)
-                    val domain = prefs.getString("domain_$pkg", "u:r:nksu:s0") ?: "u:r:nksu:s0"
-                    val nsValue = prefs.getInt("ns_$pkg", NksuNamespace.INHERITED.value)
-                    val ns = NksuNamespace.entries.find { it.value == nsValue } ?: NksuNamespace.INHERITED
-
-                    val caps =
-                        if (capsJson != null) {
-                            try {
-                                val capLabels =
-                                    json.decodeFromString(
-                                        SetSerializer(String.serializer()),
-                                        capsJson,
-                                    )
-                                LinuxCap.entries.filter { it.label in capLabels }.toSet()
-                            } catch (_: Exception) {
-                                DEFAULT_CAPS
-                            }
-                        } else {
-                            DEFAULT_CAPS
-                        }
-                    configs[pkg] =
-                        AppConfig(
-                            allowed = true,
-                            caps = caps,
-                            selinuxDomain = domain,
-                            namespace = ns,
-                        )
-                }
-
+                val configs = allowed.associateWith { readConfigFromPrefs(it) }
                 appConfigs = configs
 
                 val pm = context.packageManager
@@ -208,29 +192,28 @@ class AppViewModel(
             }
             withContext(Dispatchers.Main) { updateFilteredApps() }
         }
-    }
 
-    private fun appsCacheFile(versionCode: Long) = java.io.File(context.cacheDir, "apps_cache_$versionCode.json")
+    private fun installedCount(): Int = context.packageManager.getInstalledPackages(0).size
 
-    suspend fun loadApps(forceRefresh: Boolean = false) {
+    private fun appsCacheFile(count: Int) = File(context.cacheDir, "apps_cache_$count.json")
+
+    suspend fun loadApps(forceRefresh: Boolean = false) =
         withContext(Dispatchers.IO) {
-            val versionCode =
-                context.packageManager
-                    .getPackageInfo(context.packageName, 0)
-                    .longVersionCode
+            val count = installedCount()
 
             if (!forceRefresh) {
-                val cacheFile = appsCacheFile(versionCode)
+                val cacheFile = appsCacheFile(count)
                 if (cacheFile.exists()) {
                     try {
-                        allApps =
+                        val cached =
                             json
                                 .decodeFromString(
                                     ListSerializer(AppInfo.serializer()),
                                     cacheFile.readText(),
                                 ).filter { it.packageName.isNotBlank() }
-                        isLoaded = true
-                        if (allApps.isNotEmpty()) {
+                        if (cached.isNotEmpty()) {
+                            allApps = cached
+                            isLoaded = true
                             loadAppConfigs()
                             return@withContext
                         }
@@ -247,9 +230,7 @@ class AppViewModel(
                     .mapNotNull { pkg ->
                         pkg.applicationInfo?.let { ai ->
                             AppInfo(
-                                name =
-                                    ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() }
-                                        ?: pkg.packageName,
+                                name = ai.loadLabel(pm)?.toString()?.takeIf { it.isNotBlank() } ?: pkg.packageName,
                                 packageName = pkg.packageName,
                                 uid = ai.uid,
                                 isSystem = (ai.flags and ApplicationInfo.FLAG_SYSTEM) != 0,
@@ -258,16 +239,16 @@ class AppViewModel(
                         }
                     }.sortedBy { it.name.lowercase() }
             isLoaded = true
+
             context.cacheDir
                 .listFiles { f ->
                     f.name.startsWith("apps_cache_") && f.name.endsWith(".json")
                 }?.forEach { it.delete() }
-            appsCacheFile(versionCode).writeText(
+            appsCacheFile(count).writeText(
                 json.encodeToString(ListSerializer(AppInfo.serializer()), allApps),
             )
             loadAppConfigs()
         }
-    }
 
     fun setAppConfig(
         app: AppInfo,
@@ -314,8 +295,21 @@ class AppViewModel(
     }
 
     fun refreshAppConfig(packageName: String) {
+        if (packageName.isBlank()) return
         viewModelScope.launch(Dispatchers.IO) {
-            loadAppConfigs()
+            val isAllowed =
+                try {
+                    dbHelper.isAllowed(packageName)
+                } catch (_: Exception) {
+                    false
+                }
+            if (isAllowed) {
+                val cfg = readConfigFromPrefs(packageName)
+                appConfigs = appConfigs + (packageName to cfg)
+            } else {
+                appConfigs = appConfigs - packageName
+            }
+            withContext(Dispatchers.Main) { updateFilteredApps() }
         }
     }
 }
@@ -357,12 +351,17 @@ fun HistoryScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val refreshState = rememberPullToRefreshState()
+
     LaunchedEffect(Unit) { viewModel.loadApps() }
 
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     LaunchedEffect(navBackStackEntry) {
-        if (navBackStackEntry?.destination?.route?.startsWith("app_detail/") == false) {
-            viewModel.refreshAppConfig("")
+        val route = navBackStackEntry?.destination?.route ?: return@LaunchedEffect
+        if (route.startsWith("app_detail/")) {
+        } else {
+            val prevEntry = navController.previousBackStackEntry
+            val pkg = prevEntry?.arguments?.getString("packageName") ?: return@LaunchedEffect
+            viewModel.refreshAppConfig(pkg)
         }
     }
 
@@ -379,7 +378,9 @@ fun HistoryScreen(
                             IconButton(onClick = {
                                 viewModel.isSearching = false
                                 viewModel.searchQuery = ""
-                            }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null) }
+                            }) {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                            }
                         },
                         title = {
                             TextField(
@@ -500,8 +501,10 @@ fun HistoryScreen(
                 }
 
                 else -> {
-                    val pinnedList = apps.filter { it.packageName in viewModel.pinnedApps }
-                    val otherList = apps.filter { it.packageName !in viewModel.pinnedApps }
+                    val pinnedApps = viewModel.pinnedApps
+                    val (pinnedList, otherList) = apps.partition { it.packageName in pinnedApps }
+                    val fullList = pinnedList + otherList
+                    val totalSize = fullList.size
 
                     LazyColumn(
                         state = listState,
@@ -509,22 +512,17 @@ fun HistoryScreen(
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         contentPadding = PaddingValues(top = 12.dp, bottom = extraBottomPadding),
                     ) {
-                        val fullList = pinnedList + otherList
-                        val totalSize = fullList.size
-
                         itemsIndexed(
                             fullList,
-                            key = { _, it ->
-                                val prefix = if (it.packageName in viewModel.pinnedApps) "pinned_" else "other_"
-                                prefix + it.packageName
+                            key = { _, app ->
+                                val prefix = if (app.packageName in pinnedApps) "pinned_" else "other_"
+                                prefix + app.packageName
                             },
                         ) { index, app ->
                             AppInfoItem(
                                 app = app,
                                 config = viewModel.appConfigs[app.packageName],
-                                onClick = {
-                                    navController.navigate("app_detail/${app.packageName}")
-                                },
+                                onClick = { navController.navigate("app_detail/${app.packageName}") },
                                 shape = getAdapterShape(index, totalSize),
                                 modifier = Modifier.animateItem(),
                             )
@@ -617,17 +615,11 @@ fun AppInfoItem(
                     .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            AppIcon(
-                packageName = app.packageName,
-                modifier = Modifier.size(42.dp),
-            )
+            AppIcon(packageName = app.packageName, modifier = Modifier.size(42.dp))
 
             Spacer(Modifier.width(14.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-            ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                 Text(
                     text = app.name,
                     style = MaterialTheme.typography.titleMedium,
@@ -635,9 +627,8 @@ fun AppInfoItem(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-
                 Text(
-                    text = "${app.packageName}",
+                    text = app.packageName,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1,
@@ -649,12 +640,8 @@ fun AppInfoItem(
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (isAllowed) {
-                    AppTag(label = "allowed", color = MaterialTheme.colorScheme.primary)
-                }
-                if (app.isSystem) {
-                    AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
-                }
+                if (isAllowed) AppTag(label = "allowed", color = MaterialTheme.colorScheme.primary)
+                if (app.isSystem) AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
             }
         }
     }
@@ -665,10 +652,7 @@ fun AppTag(
     label: String,
     color: Color,
 ) {
-    Surface(
-        shape = RoundedCornerShape(4.dp),
-        color = color.copy(alpha = 0.12f),
-    ) {
+    Surface(shape = RoundedCornerShape(4.dp), color = color.copy(alpha = 0.12f)) {
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
@@ -709,16 +693,9 @@ fun AppIcon(
 
     Crossfade(targetState = iconBitmap, label = "icon_crossfade") { bitmap ->
         if (bitmap != null) {
-            Image(
-                bitmap = bitmap,
-                contentDescription = "App Icon",
-                modifier = modifier,
-            )
+            Image(bitmap = bitmap, contentDescription = "App Icon", modifier = modifier)
         } else {
-            Box(
-                modifier = modifier,
-                contentAlignment = Alignment.Center,
-            ) {
+            Box(modifier = modifier, contentAlignment = Alignment.Center) {
                 Icon(
                     imageVector = Icons.Default.Android,
                     contentDescription = null,

@@ -57,6 +57,15 @@ class RootDbHelper(
         )
     }
 
+    fun isAllowed(packageName: String): Boolean =
+        readableDatabase
+            .rawQuery(
+                "SELECT 1 FROM root_apps WHERE packageName = ? AND allowed = 1 LIMIT 1",
+                arrayOf(packageName),
+            ).use { c ->
+                c.moveToFirst()
+            }
+
     override fun close() = super.close()
 }
 
