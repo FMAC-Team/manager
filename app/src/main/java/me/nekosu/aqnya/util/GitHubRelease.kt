@@ -38,10 +38,11 @@ object UpdateChecker {
                         return@withContext null
                     }
 
-                    val body = resp.body?.string() ?: run {
-                        Log.e("UpdateCheck", "Response body is null")
-                        return@withContext null
-                    }
+                    val body =
+                        resp.body?.string() ?: run {
+                            Log.e("UpdateCheck", "Response body is null")
+                            return@withContext null
+                        }
 
                     Log.d("UpdateCheck", "GitHub raw JSON: $body")
 
