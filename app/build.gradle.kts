@@ -40,13 +40,6 @@ android {
         }
     }
 
-    sourceSets {
-        getByName("main") {
-            @Suppress("DEPRECATION")
-            jniLibs.setSrcDirs(listOf("src/main/jniLibs"))
-        }
-    }
-
     signingConfigs {
         create("debugKey") {
             storeFile = file("${rootDir}/debug.keystore")
@@ -94,8 +87,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.okhttp)
-    implementation(libs.moshi)
-    implementation(libs.moshi.kotlin)
     implementation("com.google.android.play:core:1.10.3")
     implementation(libs.kotlinx.serialization.json)
     implementation("me.nekosu.flutter_nekosu:flutter_release:1.0")

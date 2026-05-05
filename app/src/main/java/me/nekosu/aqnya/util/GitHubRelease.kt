@@ -1,28 +1,23 @@
 package me.nekosu.aqnya.util
 
 import android.util.Log
-import com.squareup.moshi.Json
-import com.squareup.moshi.Moshi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
+@Serializable
 data class GitHubRelease(
-    @param:Json(name = "tag_name") val tagName: String,
-    @param:Json(name = "name") val releaseName: String,
+    @SerialName("tag_name") val tagName: String,
+    @SerialName("name") val releaseName: String,
 )
 
 object UpdateChecker {
     private val client = OkHttpClient()
-    private val moshi =
-        Moshi
-            .Builder()
-            .add(
-                com.squareup.moshi.kotlin.reflect
-                    .KotlinJsonAdapterFactory(),
-            ).build()
-    private val adapter = moshi.adapter(GitHubRelease::class.java)
+    private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun fetchLatestVersion(
         owner: String,
@@ -38,21 +33,19 @@ object UpdateChecker {
                         .build()
 
                 client.newCall(request).execute().use { resp ->
-
                     if (!resp.isSuccessful) {
                         Log.e("UpdateCheck", "HTTP error: ${resp.code}")
                         return@withContext null
                     }
 
-                    val body =
-                        resp.body?.string() ?: run {
-                            Log.e("UpdateCheck", "Response body is null")
-                            return@withContext null
-                        }
+                    val body = resp.body?.string() ?: run {
+                        Log.e("UpdateCheck", "Response body is null")
+                        return@withContext null
+                    }
 
                     Log.d("UpdateCheck", "GitHub raw JSON: $body")
 
-                    adapter.fromJson(body)?.releaseName
+                    json.decodeFromString<GitHubRelease>(body).releaseName
                 }
             } catch (e: Exception) {
                 Log.e("UpdateCheck", "Error checking update", e)

@@ -148,12 +148,6 @@ private val licenseList =
         ),
         LicenseItem(
             "square",
-            "Moshi",
-            "https://github.com/square/moshi",
-            LicenseType.Apache2,
-        ),
-        LicenseItem(
-            "square",
             "okhttp",
             "https://github.com/square/okhttp",
             LicenseType.Apache2,
