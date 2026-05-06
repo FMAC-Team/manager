@@ -289,8 +289,8 @@ fun AppDetailScreen(
                             AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                         }
                     }
-                    
-                  RowDivider()
+
+                    RowDivider()
 
                     Row(
                         modifier =
