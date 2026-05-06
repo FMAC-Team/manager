@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,7 +29,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.compose.material.icons.filled.Save
 
 @Composable
 fun CapsDialog(
@@ -108,8 +108,7 @@ fun CapsDialog(
                                     ) {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         draft = if (checked) draft - cap else draft + cap
-                                    }
-                                    .padding(vertical = 4.dp, horizontal = 2.dp),
+                                    }.padding(vertical = 4.dp, horizontal = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(checked = checked, onCheckedChange = null)
@@ -228,8 +227,8 @@ fun AppDetailScreen(
                     }
                 },
             )
-	},
-            floatingActionButton = {
+        },
+        floatingActionButton = {
             FloatingActionButton(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
@@ -259,7 +258,7 @@ fun AppDetailScreen(
         ) {
             item {
                 GroupCard {
-                             Row(
+                    Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -290,7 +289,7 @@ fun AppDetailScreen(
                             AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                         }
                     }
-                    
+
                     Row(
                         modifier =
                             Modifier
@@ -302,8 +301,11 @@ fun AppDetailScreen(
                             imageVector = if (allowed) Icons.Default.LockOpen else Icons.Default.Lock,
                             contentDescription = null,
                             tint =
-                                if (allowed) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                if (allowed) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                },
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -340,7 +342,9 @@ fun AppDetailScreen(
                                             Modifier.size(SwitchDefaults.IconSize),
                                         )
                                     }
-                                } else null,
+                                } else {
+                                    null
+                                },
                         )
                     }
 
@@ -356,16 +360,18 @@ fun AppDetailScreen(
                                 ) {
                                     haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                                     showCapsDialog = true
-                                }
-                                .padding(horizontal = 16.dp, vertical = 14.dp),
+                                }.padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             imageVector = Icons.Default.Tune,
                             contentDescription = null,
                             tint =
-                                if (allowed) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                if (allowed) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                },
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -374,22 +380,35 @@ fun AppDetailScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
-                                    if (allowed) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                    if (allowed) {
+                                        MaterialTheme.colorScheme.onSurface
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                    },
                             )
                             Text(
                                 text =
                                     when {
-                                        !allowed -> "请先启用 Root 授权"
-                                        caps.isEmpty() -> "无 capabilities"
-                                        else ->
+                                        !allowed -> {
+                                            "请先启用 Root 授权"
+                                        }
+
+                                        caps.isEmpty() -> {
+                                            "无 capabilities"
+                                        }
+
+                                        else -> {
                                             caps.take(4).joinToString(" · ") { it.label } +
                                                 if (caps.size > 4) " +${caps.size - 4}" else ""
+                                        }
                                     },
                                 style = MaterialTheme.typography.labelSmall,
                                 color =
-                                    if (allowed) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                    if (allowed) {
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                    },
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -465,12 +484,13 @@ fun AppDetailScreen(
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            modifier = Modifier.padding(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 6.dp,
-                                bottom = 2.dp,
-                            ),
+                            modifier =
+                                Modifier.padding(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 6.dp,
+                                    bottom = 2.dp,
+                                ),
                         )
                         NksuNamespace.entries.forEach { option ->
                             Row(
@@ -485,8 +505,7 @@ fun AppDetailScreen(
                                         ) {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             ns = option
-                                        }
-                                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                                        }.padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 RadioButton(
@@ -501,8 +520,11 @@ fun AppDetailScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color =
-                                            if (allowed) MaterialTheme.colorScheme.onSurface
-                                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                                            if (allowed) {
+                                                MaterialTheme.colorScheme.onSurface
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                            },
                                     )
                                     Text(
                                         text = option.description,
