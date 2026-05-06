@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
@@ -27,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import androidx.compose.material.icons.filled.Save
 
 @Composable
 fun CapsDialog(
@@ -106,7 +108,8 @@ fun CapsDialog(
                                     ) {
                                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                         draft = if (checked) draft - cap else draft + cap
-                                    }.padding(vertical = 4.dp, horizontal = 2.dp),
+                                    }
+                                    .padding(vertical = 4.dp, horizontal = 2.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(checked = checked, onCheckedChange = null)
@@ -146,6 +149,28 @@ fun CapsDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("取消") }
         },
+    )
+}
+
+@Composable
+private fun GroupCard(content: @Composable ColumnScope.() -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
+            ),
+    ) {
+        Column(content = content)
+    }
+}
+
+@Composable
+private fun RowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(horizontal = 16.dp),
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
     )
 }
 
@@ -202,23 +227,25 @@ fun AppDetailScreen(
                         )
                     }
                 },
-                actions = {
-                    TextButton(onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                        onSave(
-                            AppConfig(
-                                allowed = allowed,
-                                caps = caps,
-                                selinuxDomain = domain,
-                                namespace = ns,
-                            ),
-                        )
-                        onBack()
-                    }) {
-                        Text("保存", fontWeight = FontWeight.SemiBold)
-                    }
-                },
             )
+	},
+            floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                    onSave(
+                        AppConfig(
+                            allowed = allowed,
+                            caps = caps,
+                            selinuxDomain = domain,
+                            namespace = ns,
+                        ),
+                    )
+                    onBack()
+                },
+            ) {
+                Icon(Icons.Filled.Save, contentDescription = "保存")
+            }
         },
     ) { innerPadding ->
         LazyColumn(
@@ -231,15 +258,8 @@ fun AppDetailScreen(
             contentPadding = PaddingValues(top = 12.dp, bottom = 96.dp),
         ) {
             item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f),
-                        ),
-                ) {
-                    Row(
+                GroupCard {
+                             Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -270,28 +290,7 @@ fun AppDetailScreen(
                             AppTag(label = "system", color = MaterialTheme.colorScheme.secondary)
                         }
                     }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-
-            item {
-                SectionLabel("Root 授权")
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.18f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
-                ) {
+                    
                     Row(
                         modifier =
                             Modifier
@@ -303,11 +302,8 @@ fun AppDetailScreen(
                             imageVector = if (allowed) Icons.Default.LockOpen else Icons.Default.Lock,
                             contentDescription = null,
                             tint =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                },
+                                if (allowed) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -337,44 +333,30 @@ fun AppDetailScreen(
                             },
                             thumbContent =
                                 if (allowed) {
-                                    { Icon(Icons.Filled.CheckCircle, null, Modifier.size(SwitchDefaults.IconSize)) }
-                                } else {
-                                    null
-                                },
+                                    {
+                                        Icon(
+                                            Icons.Filled.CheckCircle,
+                                            null,
+                                            Modifier.size(SwitchDefaults.IconSize),
+                                        )
+                                    }
+                                } else null,
                         )
                     }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
 
-            item {
-                SectionLabel("Capabilities")
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                when {
-                                    !allowed -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.03f)
-                                    caps.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
-                                    else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
-                    onClick = {
-                        if (allowed) {
-                            haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
-                            showCapsDialog = true
-                        }
-                    },
-                ) {
+                    RowDivider()
                     Row(
                         modifier =
                             Modifier
                                 .fillMaxWidth()
+                                .clickable(
+                                    enabled = allowed,
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = null,
+                                ) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
+                                    showCapsDialog = true
+                                }
                                 .padding(horizontal = 16.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -382,11 +364,8 @@ fun AppDetailScreen(
                             imageVector = Icons.Default.Tune,
                             contentDescription = null,
                             tint =
-                                if (allowed) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                },
+                                if (allowed) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         )
                         Spacer(Modifier.width(14.dp))
                         Column(modifier = Modifier.weight(1f)) {
@@ -395,68 +374,45 @@ fun AppDetailScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
                                 color =
-                                    if (allowed) {
-                                        MaterialTheme.colorScheme.onSurface
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                    },
+                                    if (allowed) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                             )
-                            if (allowed) {
-                                Text(
-                                    text =
-                                        if (caps.isEmpty()) {
-                                            "无 capabilities"
-                                        } else {
+                            Text(
+                                text =
+                                    when {
+                                        !allowed -> "请先启用 Root 授权"
+                                        caps.isEmpty() -> "无 capabilities"
+                                        else ->
                                             caps.take(4).joinToString(" · ") { it.label } +
                                                 if (caps.size > 4) " +${caps.size - 4}" else ""
-                                        },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            } else {
-                                Text(
-                                    text = "请先启用 Root 授权",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                )
-                            }
+                                    },
+                                style = MaterialTheme.typography.labelSmall,
+                                color =
+                                    if (allowed) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                                    else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                         if (allowed) {
                             Icon(
-                                imageVector = Icons.Default.Tune,
-                                contentDescription = "编辑",
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
-
-            item {
-                SectionLabel("SELinux Domain")
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                if (allowed && domain != "u:r:nksu:s0") {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
-                ) {
                     Column(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
                     ) {
+                        Text(
+                            text = "SELinux Domain",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(bottom = 6.dp, start = 2.dp),
+                        )
                         OutlinedTextField(
                             value = domain,
                             onValueChange = { domain = it },
@@ -501,29 +457,21 @@ fun AppDetailScreen(
                             )
                         }
                     }
-                }
-                Spacer(Modifier.height(16.dp))
-            }
 
-            item {
-                SectionLabel("Mount 命名空间")
-                Spacer(Modifier.height(4.dp))
-            }
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(20.dp),
-                    colors =
-                        CardDefaults.cardColors(
-                            containerColor =
-                                if (allowed && ns != NksuNamespace.INHERITED) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.14f)
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.04f)
-                                },
-                        ),
-                ) {
+                    RowDivider()
                     Column(modifier = Modifier.padding(vertical = 6.dp)) {
+                        Text(
+                            text = "Mount 命名空间",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 6.dp,
+                                bottom = 2.dp,
+                            ),
+                        )
                         NksuNamespace.entries.forEach { option ->
                             Row(
                                 modifier =
@@ -537,7 +485,8 @@ fun AppDetailScreen(
                                         ) {
                                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                             ns = option
-                                        }.padding(horizontal = 16.dp, vertical = 10.dp),
+                                        }
+                                        .padding(horizontal = 16.dp, vertical = 10.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 RadioButton(
@@ -552,11 +501,8 @@ fun AppDetailScreen(
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color =
-                                            if (allowed) {
-                                                MaterialTheme.colorScheme.onSurface
-                                            } else {
-                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                                            },
+                                            if (allowed) MaterialTheme.colorScheme.onSurface
+                                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                                     )
                                     Text(
                                         text = option.description,
@@ -568,6 +514,7 @@ fun AppDetailScreen(
                         }
                     }
                 }
+                Spacer(Modifier.height(20.dp))
             }
         }
     }
